@@ -1,8 +1,5 @@
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import numpy as np
+from sklearn.model_selection import train_test_split
 from random import random, seed
 
 def FrankeFunction(x,y):
@@ -29,32 +26,47 @@ def create_X(x,y,n):
 
     return X
 
-def SVD(A):
-    ''' Takes as input a numpy matrix A and returns inv(A) based on singular value decomposition (SVD).
-    SVD is numerically more stable than the inversion algorithms provided by
-    numpy and scipy.linalg at the cost of being slower.
-    '''
-    U, S, VT = np.linalg.svd(A,full_matrices=True)
-    print('test U')
-    print( (np.transpose(U) @ U - U @np.transpose(U)))
-    print('test VT')
-    print( (np.transpose(VT) @ VT - VT @np.transpose(VT)))
-    print(U)
-    print(S)
-    print(VT)
+def generate_MSE_R2(X,Y,Z):
+    """Generates, and calculates Mean Squared Error and R^2 for
+        two dimensional polynomials up to a degree of 5.
 
-    D = np.zeros((len(U),len(VT)))
-    for i in range(0,len(VT)):
-        D[i,i]=S[i]
-    return U @ D @ VT
+    -------
+    Params:
+    - X, Y, Z: NxN matrices of equal size where X,Y are inputs for a function(x,y) that gives Z.
 
+
+    ----
+    Returns:
+    MSE, R_squared: Dictionaries containing the values for MSE, R^2 for each of the
+                            polynomials up to degree 5
+    """
+    Z_mean = np.mean(Z.ravel())
+    DM = {}
+    beta = {}
+    Z_tilde = {}
+    MSE = {}
+    R_squared = {}
+    for k in range(1, 6):
+        DM[k] = create_X(X.ravel(),Y.ravel(),n=k)
+        beta[k] = np.linalg.inv(DM[k].T.dot(DM[k])).dot(DM[k].T).dot(Z.ravel())
+        Z_tilde[k] = DM[k].dot(beta[k])
+        n = len(Z_tilde[k])
+        MSE[k] = 1 / n * sum((Z.ravel()[i] - Z_tilde[k].ravel()[i]) **2 for i in range(len(Z.ravel())))
+        R_squared[k] = 1 - ( sum((Z.ravel()[i] - Z_tilde[k].ravel()[i]) **2 for i in range(len(Z.ravel()))) /
+                                sum((Z.ravel()[i] - Z_mean) **2 for i in range(len(Z.ravel()))) )
+
+    return MSE, R_squared
 if __name__ == "__main__":
-    fig = plt.figure()
-    ax = fig.gca(projection="3d")
-
-    # Make data.
-    x = np.arange(0, 1, 0.05)
-    y = np.arange(0, 1, 0.05)
-    x, y = np.meshgrid(x,y)
-    X = create_X(x,y,n=36)
+    x = np.arange(0,1,0.05)
+    y = np.arange(0,1,0.05)
+    X,Y = np.meshgrid(x,y)
+    Z = FrankeFunction(X,Y)
+    X_train, X_test, Y_train, Y_test, Z_train, Z_test = train_test_split(X,Y,Z)
+    MSE, R_squared = generate_MSE_R2(X_train,Y_train,Z_train)
     breakpoint()
+    # fig = plt.figure()
+    # ax = fig.gca(projection="3d")
+    # breakpoint()
+    # surf1 = ax.plot_surface(X,Y,Z)
+    # surf2 = ax.plot_surface(X,Y,)
+    # plt.show()
