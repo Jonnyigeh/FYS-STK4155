@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from random import random, seed
 
@@ -26,29 +27,36 @@ def create_X(x,y,n):
 
     return X
 
-def generate_MSE_R2(X,Y,Z):
-    """Generates, and calculates Mean Squared Error and R^2 for
-        two dimensional polynomials up to a degree of 5.
+def generate_linear_model(DM, Z):
+    """
 
-    -------
-    Params:
-    - X, Y, Z: NxN matrices of equal size where X,Y are inputs for a function(x,y) that gives Z.
+    """
+    beta = {}
+    for k in range(1, 6):
+        beta[k] = np.linalg.inv(DM[k].T.dot(DM[k])).dot(DM[k].T).dot(Z.ravel())
+
+    return beta
+
+def generate_DM(X,Y):
+    """
+
+    """
+    DM = {}
+    for k in range(1,6):
+        DM[k] = create_X(X.ravel(),Y.ravel(),n=k)
+
+    return DM
+
+def generate_MSE_R2(DM, beta, Z):
+    """
 
 
-    ----
-    Returns:
-    MSE, R_squared: Dictionaries containing the values for MSE, R^2 for each of the
-                            polynomials up to degree 5
     """
     Z_mean = np.mean(Z.ravel())
-    DM = {}
-    beta = {}
     Z_tilde = {}
     MSE = {}
     R_squared = {}
     for k in range(1, 6):
-        DM[k] = create_X(X.ravel(),Y.ravel(),n=k)
-        beta[k] = np.linalg.inv(DM[k].T.dot(DM[k])).dot(DM[k].T).dot(Z.ravel())
         Z_tilde[k] = DM[k].dot(beta[k])
         n = len(Z_tilde[k])
         MSE[k] = 1 / n * sum((Z.ravel()[i] - Z_tilde[k].ravel()[i]) **2 for i in range(len(Z.ravel())))
@@ -56,17 +64,38 @@ def generate_MSE_R2(X,Y,Z):
                                 sum((Z.ravel()[i] - Z_mean) **2 for i in range(len(Z.ravel()))) )
 
     return MSE, R_squared
+
+
 if __name__ == "__main__":
     x = np.arange(0,1,0.05)
     y = np.arange(0,1,0.05)
     X,Y = np.meshgrid(x,y)
-    Z = FrankeFunction(X,Y)
-    X_train, X_test, Y_train, Y_test, Z_train, Z_test = train_test_split(X,Y,Z)
-    MSE, R_squared = generate_MSE_R2(X_train,Y_train,Z_train)
+    xnoise = np.random.rand(len(x)) * 0.25
+    ynoise = np.random.rand(len(x)) * 0.25
+    Xnoise, Ynoise = np.meshgrid(xnoise, ynoise)
+    Z = FrankeFunction(X,Y) + (Xnoise + Ynoise)
+
+    DM = generate_DM(X,Y)
+    DM_train = {}
+    DM_test = {}
+    for k in range(1,6):
+        DM_train[k], DM_test[k], Z_train, Z_test = train_test_split(DM[k], Z.ravel(), test_size=0.33)
+
+    beta = generate_linear_model(DM_train, Z_train)
+    MSE_2, R2_2 = generate_MSE_R2(DM_train, beta, Z_train)
+    MSE, R2 = generate_MSE_R2(DM_test, beta, Z_test)
+    x = np.linspace(1,21,21)
+    fig, axs = plt.subplots(2, 2)
+    b = np.linspace(0,21,21)
+    axs[0][0].plot([1,2,3,4,5], [MSE[1], MSE[2], MSE[3], MSE[4], MSE[5]], "-o")
+    axs[0][0].plot([1,2,3,4,5], [R2[1], R2[2], R2[3], R2[4], R2[5]], "-o")
+    axs[0][0].legend(["MSE", "R2"])
+    axs[0][1].scatter(x[0:3], beta[1])
+    axs[1][0].scatter(x[0:10], beta[3])
+    axs[1][1].scatter(x, beta[5])
+    axs[0][1].legend(["Beta for polynomial degree 1"])
+    axs[1][0].legend(["Beta for polynomial degree 3"])
+    axs[1][1].legend(["Beta for polynomial degree 5"])
+
+    plt.show()
     breakpoint()
-    # fig = plt.figure()
-    # ax = fig.gca(projection="3d")
-    # breakpoint()
-    # surf1 = ax.plot_surface(X,Y,Z)
-    # surf2 = ax.plot_surface(X,Y,)
-    # plt.show()
