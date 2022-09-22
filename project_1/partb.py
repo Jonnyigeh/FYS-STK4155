@@ -75,7 +75,7 @@ def generate_DM(X,Y):
 
 def generate_MSE_R2(DM, beta, Z):
     """Generates the Mean Squared Error (MSE), and the R^2 (R2)
-            for the polynomial fits given by the linear regression model 
+            for the polynomial fits given by the linear regression model
                 by DM and beta.
 
     Args:
@@ -98,8 +98,13 @@ def generate_MSE_R2(DM, beta, Z):
         MSE[k] = 1 / n * sum((Z.ravel()[i] - Z_tilde[k].ravel()[i]) **2 for i in range(len(Z.ravel())))
         R_squared[k] = 1 - ( sum((Z.ravel()[i] - Z_tilde[k].ravel()[i]) **2 for i in range(len(Z.ravel()))) /
                                 sum((Z.ravel()[i] - Z_mean) **2 for i in range(len(Z.ravel()))) )
-
-    return MSE, R_squared
+    Var_Z = {}
+    Bias_Z = {}
+    for k in range(1,6):
+        Z_tilde_mean = np.mean(Z_tilde[k].ravel())
+        Var_Z[k] = 1 / n * sum( (Z_tilde[k].ravel()[i] - Z_tilde_mean) **2 for i in range(len(Z.ravel())))
+        Bias_Z[k] = 1 / n * sum( (Z.ravel()[i] - Z_tilde_mean) **2 for i in range(len(Z.ravel())) )
+    return MSE, R_squared, Var_Z, Bias_Z
 
 
 if __name__ == "__main__":
@@ -118,9 +123,9 @@ if __name__ == "__main__":
         DM_train[k], DM_test[k], Z_train, Z_test = train_test_split(DM[k], Z.ravel(), test_size=0.33)
 
     beta = generate_linear_model(DM_train, Z_train)
-    MSE_2, R2_2 = generate_MSE_R2(DM_train, beta, Z_train)
-    MSE, R2 = generate_MSE_R2(DM_test, beta, Z_test)
-
+    #MSE_2, R2_2 = generate_MSE_R2(DM_train, beta, Z_train)
+    MSE, R2, Var, Bias = generate_MSE_R2(DM_test, beta, Z_test)
+    breakpoint()
 
     #
     # x = np.linspace(1,21,21)
