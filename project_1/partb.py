@@ -12,6 +12,16 @@ def FrankeFunction(x,y):
 
 
 def create_X(x,y,n):
+    """Generates the design matrix given a grid of
+            x, y datapoints - for a polynomial of degree n.
+
+    Args:
+        x = grid of x-datapoints
+        y = grid of y-datapoints
+        n = degree of desired polynomial fit
+    Returns
+        X = Design matrix
+    """
     if len(x.shape) > 1:
         x = np.ravel(x)
         y = np.ravel(y)
@@ -28,8 +38,16 @@ def create_X(x,y,n):
     return X
 
 def generate_linear_model(DM, Z):
-    """
+    """Generates the beta's for a linearmodel fit
+            using matrix inversion of the design matrix.
 
+    Args:
+        DM = Design matrix
+        Z = Output data from a function on a grid
+
+    Returns:
+        beta = Dictionary with beta values for polynomial fit of
+                    degree 1 -> 5, with degree as key.
     """
     beta = {}
     for k in range(1, 6):
@@ -38,8 +56,16 @@ def generate_linear_model(DM, Z):
     return beta
 
 def generate_DM(X,Y):
-    """
+    """Generates a dictionary of the design matrix
+            for polynomial degree 1-> 5, where degree is key.
 
+    Args:
+        X = grid of x-datapoints
+        Y = grid of y-datapoints
+
+    Returns:
+        DM = Dictionary of design matrices of polynomial fit of
+                    k, where k is the key.
     """
     DM = {}
     for k in range(1,6):
@@ -48,8 +74,18 @@ def generate_DM(X,Y):
     return DM
 
 def generate_MSE_R2(DM, beta, Z):
-    """
+    """Generates the Mean Squared Error (MSE), and the R^2 (R2)
+            for the polynomial fits given by the linear regression model
+                by DM and beta.
 
+    Args:
+        DM = Design matrix used for the polynomial fit
+        beta = Beta values for the polynomial fit
+        Z = Function values that are used to fit
+
+    Returns:
+        MSE = Dictionary of MSE, with key indicating polynomial degree
+        R2 = Dictionary of R2, with key indicating polynomial degree
 
     """
     Z_mean = np.mean(Z.ravel())
@@ -62,16 +98,21 @@ def generate_MSE_R2(DM, beta, Z):
         MSE[k] = 1 / n * sum((Z.ravel()[i] - Z_tilde[k].ravel()[i]) **2 for i in range(len(Z.ravel())))
         R_squared[k] = 1 - ( sum((Z.ravel()[i] - Z_tilde[k].ravel()[i]) **2 for i in range(len(Z.ravel()))) /
                                 sum((Z.ravel()[i] - Z_mean) **2 for i in range(len(Z.ravel()))) )
-
-    return MSE, R_squared
+    Var_Z = {}
+    Bias_Z = {}
+    for k in range(1,6):
+        Z_tilde_mean = np.mean(Z_tilde[k].ravel())
+        Var_Z[k] = 1 / n * sum( (Z_tilde[k].ravel()[i] - Z_tilde_mean) **2 for i in range(len(Z.ravel())))
+        Bias_Z[k] = 1 / n * sum( (Z.ravel()[i] - Z_tilde_mean) **2 for i in range(len(Z.ravel())) )
+    return MSE, R_squared, Var_Z, Bias_Z
 
 
 if __name__ == "__main__":
     x = np.arange(0,1,0.05)
     y = np.arange(0,1,0.05)
     X,Y = np.meshgrid(x,y)
-    xnoise = np.random.rand(len(x)) * 0.25
-    ynoise = np.random.rand(len(x)) * 0.25
+    xnoise = np.random.randn(len(x)) * 0.25
+    ynoise = np.random.randn(len(x)) * 0.25
     Xnoise, Ynoise = np.meshgrid(xnoise, ynoise)
     Z = FrankeFunction(X,Y) + (Xnoise + Ynoise)
 
@@ -82,20 +123,24 @@ if __name__ == "__main__":
         DM_train[k], DM_test[k], Z_train, Z_test = train_test_split(DM[k], Z.ravel(), test_size=0.33)
 
     beta = generate_linear_model(DM_train, Z_train)
-    MSE_2, R2_2 = generate_MSE_R2(DM_train, beta, Z_train)
-    MSE, R2 = generate_MSE_R2(DM_test, beta, Z_test)
-    x = np.linspace(1,21,21)
-    fig, axs = plt.subplots(2, 2)
-    b = np.linspace(0,21,21)
-    axs[0][0].plot([1,2,3,4,5], [MSE[1], MSE[2], MSE[3], MSE[4], MSE[5]], "-o")
-    axs[0][0].plot([1,2,3,4,5], [R2[1], R2[2], R2[3], R2[4], R2[5]], "-o")
-    axs[0][0].legend(["MSE", "R2"])
-    axs[0][1].scatter(x[0:3], beta[1])
-    axs[1][0].scatter(x[0:10], beta[3])
-    axs[1][1].scatter(x, beta[5])
-    axs[0][1].legend(["Beta for polynomial degree 1"])
-    axs[1][0].legend(["Beta for polynomial degree 3"])
-    axs[1][1].legend(["Beta for polynomial degree 5"])
-
-    plt.show()
+    #MSE_2, R2_2 = generate_MSE_R2(DM_train, beta, Z_train)
+    MSE, R2, Var, Bias = generate_MSE_R2(DM_test, beta, Z_test)
     breakpoint()
+
+    #
+    # x = np.linspace(1,21,21)
+    # fig, axs = plt.subplots(2, 2)
+    # b = np.linspace(0,21,21)
+    # axs[0][0].plot([1,2,3,4,5], [MSE[1], MSE[2], MSE[3], MSE[4], MSE[5]], "-o")
+    # axs[0][0].plot([1,2,3,4,5], [R2[1], R2[2], R2[3], R2[4], R2[5]], "-o")
+    # axs[0][0].legend(["MSE", "R2"])
+    # axs[0][1].scatter(x[0:3], beta[1])
+    # axs[1][0].scatter(x[0:10], beta[3])
+    # axs[1][1].scatter(x, beta[5])
+    # axs[0][1].legend(["Beta for polynomial degree 1"])
+    # axs[1][0].legend(["Beta for polynomial degree 3"])
+    # axs[1][1].legend(["Beta for polynomial degree 5"])
+    # plt.show()
+    # plt.plot([1,2,3,4,5], [MSE[1], MSE[2], MSE[3], MSE[4], MSE[5]], "-o")
+    # plt.plot([1,2,3,4,5], [MSE_2[1], MSE_2[2], MSE_2[3], MSE_2[4], MSE_2[5]], "k-o")
+    # breakpoint()
