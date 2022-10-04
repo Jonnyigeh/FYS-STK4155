@@ -214,6 +214,7 @@ if __name__ == "__main__":
     """
     Bootstrap part
     """
+
     bootstrap_n = 100
     MSE_new_sum = np.zeros((degree, bootstrap_n))
     Var_Z_sum = np.zeros_like(MSE_new_sum)
@@ -225,6 +226,11 @@ if __name__ == "__main__":
             beta_new = generate_linear_model(DM_new, Z_new, dim_1 = True)
             MSE_new_sum[k-1, i], R2_new, Var_Z_sum[k-1, i], Bias_Z_sum[k-1, i] = generate_MSE_R2(DM_test[k], beta_new, Z_test, dim_1 = True)
 
+    
+    
+    
+    
+    
     MSE_boot = np.ones(degree)
     Var_boot = np.ones_like(MSE_boot)
     Bias_boot = np.ones_like(MSE_boot)
