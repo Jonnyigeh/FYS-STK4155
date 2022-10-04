@@ -76,8 +76,7 @@ def MSE(Z, Z_model):
 def R2(Z, Z_model):
     n = len(Z_model)
     Z_mean = np.mean(Z.ravel())
-    r2 = 1 - np.sum((Z.ravel() - Z_model) ** 2) / np.sum((Z.ravel() - Z_mean) ** 2)
-
+    r2 = 1 - np.sum((Z.ravel() - Z_model) ** 2) / np.sum((Z.ravel() - Z_mean) **2)
     return r2
 
 def Var(model):
@@ -86,7 +85,7 @@ def Var(model):
     return variance
 
 def Bias(data, model):
-    bias = np.mean( (data.ravel() - np.mean(model)) ** 2)
+    bias = np.mean( (data.ravel() - np.mean(model)) **2)
 
     return bias
 
@@ -152,6 +151,54 @@ def bootstrap(X_train, Y_train, X_test, Y_test, method="OLS", lmbda=0, niteratio
 
     return error, variance, bias
 
+scores_KFold = np.zeros((nlambdas))    
+
+
+""" CrossValidation - method """
+
+k = 5
+kfold = KFold(n_splits = k)
+scores = KFold = np.zeros((nlambdas, k))
+i = 0
+
+for lmb in lambdas:
+    ridge = Ridge(alpha =lmb)
+    j = 0
+
+    for train_inds, test_inds in kfold.split(x):
+        X_train = x[train_inds] 
+        Y_train = y[train_inds]
+
+        X_test = x[test_inds]
+        Y_test = y[test_inds]
+
+        X_train = poly.fit_transform(X_test[:,np.newaxis])
+        ridge.fit(X_train,Y_train[:,np.newaxis])
+
+        X_test = poly.fit_transform(X_test[:,newaxis])
+        ypredict = ridge.predict(X_test)
+
+        scores_KFold[i,j] = np.sum((ypredict-Y_test[:,np.newaxis]) **2)/np.size(ypredict)
+
+        j += 1
+    i += 1
+estimated_mse_kFold = np.mean(scores_KFold, axis=1)
+
+#Cross-validation using cross_val_score from sklearn along with Kfold
+
+# kfold is an instance initialized above as:
+# kfold = Kfold(n_splits = k)
+
+estimated_mse_sklearn = np.zeros(nlambdas)
+i = 0
+for lmb in lambdas:
+    ridge = Ridge(alpga = lmb)
+
+    X = poly.fit_transform(x[:, np.newaxis])
+    estimated_mse_folds = cross_val_score(ridge, X, y[:,np.newaxis], scoring = 'neg_mean_squared_error', cv = kfold)
+    estimated_mse_sklearn[i] = np.mean( -estimated_mse_folds)
+
+    i += 1
 
 if __name__ == "__main__":
     n = 40        # Number of datapoints
