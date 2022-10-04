@@ -154,7 +154,7 @@ def bootstrap(X_train, Y_train, X_test, Y_test, method="OLS", lmbda=0, niteratio
 
 
 if __name__ == "__main__":
-    n = 40        # Number of datapoints
+    n = 40         # Number of datapoints
     if True:       # Setting up datastructures
         x = np.linspace(0,1,n)
         y = np.linspace(0,1,n)

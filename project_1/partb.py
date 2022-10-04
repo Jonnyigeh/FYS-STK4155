@@ -1,8 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression, Lasso
 from random import random, seed
 from sklearn.utils import resample
+
+seed(2020)
 
 def FrankeFunction(x,y):
     term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
@@ -49,11 +52,54 @@ def generate_linear_model(DM, Z, dim_1 = False, Ridge = False, Lasso = False):
     Returns:
         beta = Dictionary with beta values for polynomial fit of
                     degree 1 -> 5, with degree as key.
+        with dim_1 = True
+            beta = single array of beta values for the desired polynomial
     """
-    if dim_1:
-        beta = np.linalg.inv(DM.T.dot(DM)).dot(DM.T).dot(Z.ravel())
 
-        return beta
+    if dim_1:
+        """
+        True if you want the function to return a single
+            np.array with betas corresponding to a single polynomial fit,
+                where polynomial degree is decided by the Design Matrix DM.
+        """
+        if Ridge:
+            """
+            Performs Ridge Regression and
+                return the coefficients in the linear fit (betas) for
+                    100 lambdas in the interval log[-4, 4]
+            """
+            nlambdas = 100
+            lmb = np.logspace(-6,6, nlambdas)
+            beta = np.zeros((100, len(DM[1])))
+            for i in range(nlambdas):
+                hessian = DM.T.dot(DM)
+                width, height = np.shape(hessian)
+                I = np.eye(width, height)
+                beta[i] = np.linalg.inv(hessian + lmb[i] * I).dot(DM.T).dot(Z.ravel())
+
+            return beta, lmb
+
+        if Lasso:
+            """
+            Performs Lasso linear_regression and
+                returns the coefficients for the linear fits (betas) for
+                    100 lambdas in the interval log[-4, 4]
+            """
+            nlambdas = 100
+            lmb = np.logspace(-4,4, nlambdas)
+            beta = np.zeros(100)
+            for i in range(nlambdas):
+                lasso_reg = Lasso(lmb)
+                lasso_reg.fit(DM,Z)
+                beta[i] = lasso_reg.coef_
+
+            return beta
+
+        else:
+
+            beta = np.linalg.inv(DM.T.dot(DM)).dot(DM.T).dot(Z.ravel())
+
+            return beta
     else:
         beta = {}
         for k in range(1, degree+1):
@@ -127,7 +173,6 @@ def generate_MSE_R2(DM, beta, Z, dim_1 = False):
             Bias_Z[k] = 1 / n * sum( (Z.ravel()[i] - Z_tilde_mean) **2 for i in range(len(Z.ravel())) )
         return MSE, R_squared, Var_Z, Bias_Z
 
-
 if __name__ == "__main__":
     n = 40
     degree = 5
@@ -138,15 +183,33 @@ if __name__ == "__main__":
     ynoise = np.random.randn(len(x)) * 0.25
     Xnoise, Ynoise = np.meshgrid(xnoise, ynoise)
     Z = FrankeFunction(X,Y) + (Xnoise + Ynoise)
-
     DM = generate_DM(X,Y)
     DM_train = {}
     DM_test = {}
     for k in range(1,degree+1):
         DM_train[k], DM_test[k], Z_train, Z_test = train_test_split(DM[k], Z.ravel(), test_size=0.33)
 
+    """
+    Linear regression part
+    """
+
+    reg = LinearRegression().fit(DM_train[5], Z_train)
+
+    model = reg.predict(DM_test[5])
     beta = generate_linear_model(DM_train, Z_train)
-    MSE, R2, Var, Bias = generate_MSE_R2(DM_test, beta, Z_test)
+    MSE, R2, Var, Bias = generate_MSE_R2(DM_train, beta, Z_train)
+
+    """
+    Ridge
+    """
+    # DM_train_ridge, DM_test_ridge, Z_train_ridge, Z_test_ridge = train_test_split(DM[5], Z.ravel(), test_size=0.33)
+    # beta_ridge, lmb_ridge = generate_linear_model(DM_train_ridge, Z_train_ridge, dim_1 = True, Ridge = True)
+    # MSE_ridge = np.zeros(100)
+    # for i in range(len(MSE_ridge)):
+    #     MSE_ridge[i], R2, Var, Bias = generate_MSE_R2(DM_test_ridge, beta_ridge[i], Z_test_ridge, dim_1 = True)
+    """
+    Lasso
+    """
 
     """
     Bootstrap part
