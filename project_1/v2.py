@@ -8,7 +8,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import PolynomialFeatures
 from sys import exit
 
-seed(2018)
+seed(2001)
 
 def f(x):
     return x
@@ -61,7 +61,7 @@ def Ridge(DM, Z, lmb):
 
     return model
 
-def Lasso(DM, Z, lmb):
+def LASSO(DM, Z, lmb):
     lasso_reg = Lasso(lmb)
     lasso_reg.fit(DM,Z)
     model = lasso_reg.predict(DM)
@@ -89,10 +89,22 @@ def Bias(data, model):
 
     return bias
 
-def mean_scale(data, mean_data):
+def mean_scale(data, mean_data=0):
+    """Mean-scales the dataset by the mean of each column vector in data
+
+    args:
+        data        (np.array): meshgrid of datapoints
+        mean_data   (np.array): meshgrid of mean of datapoints (mean of columns of data)
+
+    returns:
+        new_data    (np.array): Meshgrid of scaled datapoints (now also centered)
+    """
+    if mean_data==0:
+        mean_data = np.mean(data, axis=0, keepdims=True)
+
     new_data = ( data - mean_data )
 
-    return new_data
+    return new_data, mean_data
 
 def plotin3D(x,y,z, show=False):
     """Generates a 3D surfaceplot of the data given by Z
@@ -108,15 +120,12 @@ def plotin3D(x,y,z, show=False):
     if show:
         plt.show()
 
-def bootstrap(X_train, Y_train, X_test, Y_test, method="OLS", lmbda=0, niteration=5):
+def bootstrap(X, Y, method="OLS", lmbda=0, niteration=100):
     """ Performs bootstrap
     args:
 
     """
-    X_train = mean_scale(X_train, np.mean(X_train))
-    Y_train = mean_scale(Y_train, np.mean(Y_train))
-    X_test = mean_scale(X_test, np.mean(X_train))
-    Y_test = mean_scale(Y_test, np.mean(Y_train))               # Scale with train data to
+    X_train, X_test, Y_train, Y_test = train_test_split(DM, Z.ravel(), test_size=0.33)
 
     model = np.zeros((np.shape(Y_test)[0], niteration))
     #sk_model = np.zeros((np.shape(Y_test)[0], niteration))
@@ -133,14 +142,24 @@ def bootstrap(X_train, Y_train, X_test, Y_test, method="OLS", lmbda=0, niteratio
         # return error2, variance2, bias2
 
     if method=="Ridge":
+        X_train, XmeanT = mean_scale(X_train)
+        Y_train, YmeanT = mean_scale(Y_train)
+
+        X_test = X_test - XmeanT
+        Y_test = Y_test - YmeanT
         for i in range(niteration):
             new_X, new_Y = resample(X_train, Y_train)
-            model[:,i] = X_test @ Ridge(new_X, new_Y, lmbda)
+            model[:,i] = X_test @ Ridge(new_X, new_Y, lmbda).ravel() + YmeanT
 
     if method=="Lasso":
+        X_train, XmeanT = mean_scale(X_train)
+        Y_train, YmeanT = mean_scale(Y_train)
+
+        X_test = X_test - XmeanT
+        Y_test = Y_test - YmeanT
         for i in range(niteration):
             new_X, new_Y = resample(X_train, Y_train)
-            model[:,i] = X_test @ Lasso(new_X, new_Y, lmbda)
+            model[:,i] = X_test @ LASSO(new_X, new_Y, lmbda).ravel()  + YmeanT
 
 
     Y_test = Y_test.reshape(np.shape(Y_test)[0],1)
@@ -150,10 +169,7 @@ def bootstrap(X_train, Y_train, X_test, Y_test, method="OLS", lmbda=0, niteratio
 
     return error, variance, bias
 
-    scores_KFold = np.zeros((nlambdas))
 
-
-    """ CrossValidation - method """
 
 def cross_val(X, Y, method="OLS", lmbda=0, k=5):
     kfold = KFold(n_splits=k)
@@ -167,6 +183,11 @@ def cross_val(X, Y, method="OLS", lmbda=0, k=5):
             X_test = X[test_inds]
             Y_test = Y[test_inds]
 
+            # X_train, XmeanT = mean_scale(X_train)
+            # Y_train, YmeanT = mean_scale(Y_train)
+            # X_test = X_test - XmeanT
+            # Y_test = Y_test - YmeanT
+
             model = X_test @ OLS(X_train, Y_train)
             score_KFold[i] = MSE(Y_test, model)
 
@@ -178,7 +199,12 @@ def cross_val(X, Y, method="OLS", lmbda=0, k=5):
             X_test = X[test_inds]
             Y_test = Y[test_inds]
 
-            model = X_test @ Ridge(X_train, Y_train, lmbda)
+            X_train, XmeanT = mean_scale(X_train)
+            Y_train, YmeanT = mean_scale(Y_train)
+            X_test = X_test - XmeanT
+            Y_test = Y_test - YmeanT
+
+            model = X_test @ Ridge(X_train, Y_train, lmbda) + YmeanT
             score_KFold[i] = MSE(Y_test, model)
 
     if method=="Lasso":
@@ -189,23 +215,28 @@ def cross_val(X, Y, method="OLS", lmbda=0, k=5):
             X_test = X[test_inds]
             Y_test = Y[test_inds]
 
-            model = X_test @ Lasso(X_test, model, lmbda)
+            X_train, XmeanT = mean_scale(X_train)
+            Y_train, YmeanT = mean_scale(Y_train)
+            X_test = X_test - XmeanT
+            Y_test = Y_test - YmeanT
+
+            model = X_test @ LASSO(X_train, Y_train , lmbda) + YmeanT
             score_KFold[i] = MSE(Y_test, model)
 
-    estimated_score_KFold = np.mean(score|_KFold)
+    estimated_score_KFold = np.mean(score_KFold)
     return estimated_score_KFold
 
 
 
 if __name__ == "__main__":
-    n = 40        # Number of datapoints
-    nlambdas = 100 # Number of different lambdas
+    n = 30         # Number of datapoints
+    nlambdas = 10 # Number of different lambdas
     if True:       # Setting up datastructures
         x = np.linspace(0,1,n)
         y = np.linspace(0,1,n)
         X,Y = np.meshgrid(x,y)
-        lmbdas = np.logspace(-3, 4, nlambdas)
-        sigma = 0.03
+        lmbdas = np.logspace(-4, 1, nlambdas)
+        sigma = 0.15
         Z = FrankeFunction(X,Y) + np.random.randn(n,n) * np.sqrt(sigma)
         Z_onedim = f(x) + np.random.randn(n) * np.sqrt(sigma)
 
@@ -226,8 +257,7 @@ if __name__ == "__main__":
         for i, j in enumerate(list_of_polydegree):
             # DM = create_X(X,Y,j)
             DM_ = DM[:,:j]
-            DM_train, DM_test, Z_train, Z_test = train_test_split(DM_, Z_onedim, test_size=0.33)
-            boot_ols_mse[i], boot_ols_var[i], boot_ols_bias[i] = bootstrap_OLS(DM_train, Z_train, DM_test, Z_test, niteration=100)
+            boot_ols_mse[i], boot_ols_var[i], boot_ols_bias[i] = bootstrap_OLS(DM_, Z_onedim, niteration=100)
 
         # DM_train, DM_test, Z_train, Z_test = train_test_split(DM[:,:3], Z_onedim, test_size=0.33, shuffle=False)
         # model_onedim = OLS(DM_train, Z_train)
@@ -273,7 +303,6 @@ if __name__ == "__main__":
         MSE_ols_crossval = np.zeros_like(R2_ols)
         for i in range(len(MSE_ols)):
             DM = create_X(X, Y, i+1)
-            MSE_ols_crossval[i] = cross_val(DM, Z.ravel(), k = 15)
             DM_ols[i+1] = DM
             DM_train, DM_test, Z_train, Z_test = train_test_split(DM, Z.ravel(), test_size=0.33) # splits our data
             DM_ols_test[i+1] = DM_test
@@ -304,29 +333,96 @@ if __name__ == "__main__":
         breakpoint()
         exit()
 
-    # Part c
-    part_c = True
+    # Part c and d
+    part_c = False
     if part_c:
-        list_of_polydegree = [1, 3, 5, 9, 12, 25]
-        # list_of_polydegree = [1, 2, 3, 4, 6, 8]
+        # list_of_polydegree = [1, 3, 5, 9, 12, 25]
+        list_of_polydegree = [1, 2, 3, 4, 5]
         boot_ols_mse = np.zeros(len(list_of_polydegree))
         boot_ols_var = np.zeros_like(boot_ols_mse)
         boot_ols_bias = np.zeros_like(boot_ols_mse)
+        MSE_ols_crossval = np.zeros_like(boot_ols_mse)
+        MSE_ols_crossval2 = np.zeros_like(boot_ols_mse)
+        MSE_ols_crossval3 = np.zeros_like(boot_ols_mse)
+
         for i, j in enumerate(list_of_polydegree):
             DM = create_X(X,Y, j)
-            DM_train, DM_test, Z_train, Z_test = train_test_split(DM, Z.ravel(), test_size=0.33)
-            # Z_train = mean_scale(Z_train, np.mean(Z_train))
-            # Z_test = mean_scale(Z_test, np.mean(Z_train))
-            boot_ols_mse[i], boot_ols_var[i], boot_ols_bias[i] = bootstrap(DM_train, Z_train, DM_test, Z_test)
+            MSE_ols_crossval2[i] = cross_val(DM, Z.ravel(), k = 10)
+            MSE_ols_crossval[i] = cross_val(DM, Z.ravel(), k = 5)
+            MSE_ols_crossval3[i] = cross_val(DM, Z.ravel(), k = 15)
+            boot_ols_mse[i], boot_ols_var[i], boot_ols_bias[i] = bootstrap(DM, Z, niteration=5)
         x_ = np.linspace(1,list_of_polydegree[-1],len(list_of_polydegree))
-        plt.plot(x_, boot_ols_mse, x_, boot_ols_var, x_, boot_ols_bias)
-        plt.legend(["MSE", "Var", "Bias"])
+        # plt.plot(x_, boot_ols_mse, x_, boot_ols_var, x_, boot_ols_bias)
+        # plt.legend(["MSE", "Var", "Bias"])
+
+        plt.plot(list_of_polydegree, boot_ols_mse, "-o", list_of_polydegree, MSE_ols_crossval, "-o",
+                list_of_polydegree, MSE_ols_crossval2, "-o", list_of_polydegree, MSE_ols_crossval3, "-o")
+        plt.legend(["Bootstrap", "Crossval k = 5", "Crossval k = 10", "Crossval k = 15"])
+
+
         breakpoint()
+        exit()
 
 
     ridge = False
     if ridge:
-        for lmb in lmbdas:
-            pass
+        lop = [1,2,3,4,5,10]
+        lop2 = [1,3,5,10,12,21]
+        MSE_cv = np.zeros((nlambdas,len(lop2)))
+        MSE_cv2 = np.zeros_like(MSE_cv)
+        MSE_cv3 = np.zeros_like(MSE_cv)
+        MSE_bs = np.zeros_like(MSE_cv)
+        var_bs = np.zeros_like(MSE_cv)
+        bias_bs = np.zeros_like(MSE_cv)
+        for k, lmb in enumerate(lmbdas):
+            for i, j in enumerate(lop2):
+                DM = create_X(X,Y,j)
+                MSE_cv[k,i] = cross_val(DM, Z.ravel(), k=5, method="Ridge", lmbda=lmb)
+                MSE_cv2[k,i] = cross_val(DM, Z.ravel(), k=10, method="Ridge", lmbda=lmb)
+                MSE_cv3[k,i] = cross_val(DM, Z.ravel(), k=15, method="Ridge", lmbda=lmb)
 
-    lasso = False
+                MSE_bs[k,i], var_bs[k,i], bias_bs[k,i] = bootstrap(DM, Z,
+                                        method="Ridge", lmbda=lmb, niteration=15)
+
+        deg_indx = 1
+        plt.plot(lop2, MSE_bs[deg_indx],"-o",lop2, var_bs[deg_indx],"-o",lop2, bias_bs[deg_indx], "-o")
+        plt.legend(["MSE", "Var", "Bias"])
+        breakpoint()
+        exit()
+
+
+
+    lasso = True
+    if lasso:
+        import warnings
+        warnings.filterwarnings('ignore') # To combat spam from  sklearn saying our model does not converge
+        lop  = [1,2,3,4,5,10]
+        lop2 = [1,3,5,10,12,21]
+        MSE_cv = np.zeros((nlambdas,len(lop2)))
+        MSE_cv2 = np.zeros_like(MSE_cv)
+        MSE_cv3 = np.zeros_like(MSE_cv)
+        MSE_bs = np.zeros_like(MSE_cv)
+        var_bs = np.zeros_like(MSE_cv)
+        bias_bs = np.zeros_like(MSE_cv)
+        for k, lmb in enumerate(lmbdas):
+            for i, j in enumerate(lop2):
+                DM = create_X(X,Y,j)
+                MSE_cv[k,i] = cross_val(DM, Z.ravel(), k=5, method="Lasso", lmbda=lmb)
+                MSE_cv2[k,i] = cross_val(DM, Z.ravel(), k=10, method="Lasso", lmbda=lmb)
+                MSE_cv3[k,i] = cross_val(DM, Z.ravel(), k=15, method="Lasso", lmbda=lmb)
+
+                MSE_bs[k,i], var_bs[k,i], bias_bs[k,i] = bootstrap(DM, Z,
+                                        method="Lasso", lmbda=lmb, niteration=15)
+        deg = 1
+        # plt.plot(np.log10(lmbdas), MSE_cv[:,deg],"-o", np.log10(lmbdas), MSE_cv2[:,deg],"-o", np.log10(lmbdas),
+        #                         MSE_cv3[:,deg],"-o", np.log10(lmbdas), MSE_bs[:,deg], "--o")
+        # plt.legend(["Crossval: k=5", "Crossval: k=10", "Crossval: k=15", "Bootstrap"])
+        plt.plot(lop2, MSE_bs[deg],"-o",lop2, var_bs[deg],"-o",lop2, bias_bs[deg], "-o")
+        plt.title(rf"$\lambda = {lmbdas[deg]:.6f}$")
+        plt.ylabel("Error estimate")
+        plt.xlabel("Model complexity (poly degree)")
+        plt.legend(["MSE", "Var", "Bias"])
+
+
+        breakpoint()
+        exit()
