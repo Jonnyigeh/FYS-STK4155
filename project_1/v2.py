@@ -276,10 +276,6 @@ def cross_val(X, Y, method="OLS", lmbda=0, k=10, return_beta=False):
             X_test = X[test_inds]
             Y_test = Y[test_inds]
 
-            # X_train, XmeanT = mean_scale(X_train)
-            # Y_train, YmeanT = mean_scale(Y_train)
-            # X_test = X_test - XmeanT
-            # Y_test = Y_test - YmeanT
             beta = OLS(X_train, Y_train)
             model = X_test @ beta
             score_KFold[i] = MSE(Y_test, model)
@@ -354,19 +350,9 @@ if __name__ == "__main__":
             boot_ols_var = np.zeros_like(boot_ols_mse)
             boot_ols_bias = np.zeros_like(boot_ols_mse)
             for i, j in enumerate(list_of_polydegree):
-                # DM = create_X(X,Y,j)
                 DM_ = DM[:,:j]
                 boot_ols_mse[i], boot_ols_var[i], boot_ols_bias[i] = bootstrap_OLS(DM_, Z_onedim, niteration=100)
 
-            # DM_train, DM_test, Z_train, Z_test = train_test_split(DM[:,:3], Z_onedim, test_size=0.33, shuffle=False)
-            # model_onedim = OLS(DM_train, Z_train)
-            # lin_reg = LinearRegression(fit_intercept=False)
-            # lin_reg.fit(DM_train, Z_train)
-            # ypred = lin_reg.predict(DM_test)
-            # new_model_onedim = DM_test @ model_onedim
-            # print(Bias(Z_test, new_model_onedim))
-            # print(Var(new_model_onedim))
-            # print(MSE(Z_test, new_model_onedim))
 
 
         # Sklearn reference model
@@ -406,11 +392,6 @@ if __name__ == "__main__":
                 DM_train, DM_test, Z_train, Z_test = train_test_split(DM, Z.ravel(), test_size=0.33) # splits our data
                 DM_ols_test[i+1] = DM_test
 
-                # Z_train = mean_scale(Z_train, np.mean(Z_train)) # Mean scaling of the data
-                # Z_test = mean_scale(Z_test, np.mean(Z_train)) # Same as above, but should this be done =
-                # DM_train, mean_DMtrain = mean_scale(DM_train)
-                # Z_train, mean_Ztrain = mean_scale(Z_train)
-
                 model_ols[i+1] = OLS(DM_train, Z_train) # Produces betas for our linear regression model
 
                 MSE_ols[i] = MSE(Z_test, DM_test @ model_ols[i+1])
@@ -429,10 +410,6 @@ if __name__ == "__main__":
             # ax2 = fig.add_subplot(1, 2, 2, projection='3d')
             # ax.plot_surface(X,Y,Z/np.max(Z))
             # ax2.plot_surface(X,Y, (DM_ols[5]@model_ols[5]).reshape((40,40)) / np.max((DM_ols[5]@model_ols[5])))
-
-            breakpoint()
-            exit()
-
         # Part c and d
         part_c = True
         if part_c:
@@ -458,15 +435,12 @@ if __name__ == "__main__":
             # plt.plot(list_of_polydegree, boot_ols_mse, "-o", list_of_polydegree, MSE_ols_crossval, "-o",
             #         list_of_polydegree, MSE_ols_crossval2, "-o", list_of_polydegree, MSE_ols_crossval3, "-o")
             # plt.legend(["Bootstrap", "Crossval k = 5", "Crossval k = 10", "Crossval k = 15"])
-            plt.plot(list_of_polydegree, boot_ols_mse,"-o", list_of_polydegree,
-                            boot_ols_var,"-o", list_of_polydegree, boot_ols_bias,"-o",)
-            plt.xlabel("Model complexity (polynomial degree)")
-            plt.ylabel("Error estimate")
-            plt.title(rf"Bias-Variance for $n={n}$")
-            plt.legend([r"MSE", "Var", "Bias$^2$"])
-            breakpoint()
-            exit()
-
+            # plt.plot(list_of_polydegree, boot_ols_mse,"-o", list_of_polydegree,
+            #                 boot_ols_var,"-o", list_of_polydegree, boot_ols_bias,"-o",)
+            # plt.xlabel("Model complexity (polynomial degree)")
+            # plt.ylabel("Error estimate")
+            # plt.title(rf"Bias-Variance for $n={n}$")
+            # plt.legend([r"MSE", "Var", "Bias$^2$"])
 
         ridge = False
         if ridge:
@@ -488,12 +462,8 @@ if __name__ == "__main__":
                     MSE_bs[k,i], var_bs[k,i], bias_bs[k,i] = bootstrap(DM, Z,
                                             method="Ridge", lmbda=lmb, niteration=15)
 
-            deg_indx = 1
             plt.plot(lop2, MSE_bs[deg_indx],"-o",lop2, var_bs[deg_indx],"-o",lop2, bias_bs[deg_indx], "-o")
             plt.legend(["MSE", "Var", "Bias"])
-            breakpoint()
-            exit()
-
 
 
         lasso = False
@@ -528,9 +498,6 @@ if __name__ == "__main__":
             plt.legend(["MSE", "Var", "Bias"])
 
 
-            breakpoint()
-            exit()
-
 
     realdata = True      # If studying the real data
     if realdata:
@@ -538,23 +505,17 @@ if __name__ == "__main__":
         warnings.filterwarnings('ignore') # To combat spam from sklearn.lasso saying our model does not converge
         # Load the terrain
         terrain = imread("SRTM_data_Norway_1.tif")
-        terrain = terrain[::5,::5]
+        terrain = terrain[::15,::15]
 
-        nlambdas = 100
+        nlambdas = 15
         deg = 5                 # polynomial degree
         x = np.linspace(0,1,len(terrain[0,:]))
         y = np.linspace(0,1,len(terrain[:,0]))
         X,Y = np.meshgrid(x,y)
-        lmbdas = np.logspace(-4,4, nlambdas)
+        lmbdas = np.logspace(-2,1, nlambdas)
         Z = terrain
 
         DM = create_X(X,Y,deg)
-        """ Pre-processing of data """ # We are only using CV so this is not needed
-        # DM_train, DM_test, Z_train, Z_test = train_test_split(DM, Z.ravel(), test_size=0.33)
-        # DM_train, mean_dmtrain = mean_scale(DM_train)
-        # Z_train, mean_ztrain = mean_scale(Z_train)
-        # DM_test = DM_test - mean_dmtrain
-        # Z_test = Z_test - mean_ztrain
 
         """ OLS """
         MSE_cv_ols = 0
@@ -575,25 +536,3 @@ if __name__ == "__main__":
             if j % 10 == 0:
                 print(f"hei papi ive finished calculating {j} times UwU")
             j += 1
-
-
-        breakpoint()
-
-
-        # MSE_bs_ols = np.zeros(nlambdas)
-        # var_bs = np.zeros(nlambdas)
-        # bias_bs = np.zeros(nlambdas)
-        # MSE_bs_lasso = np.zeros(nlambdas)
-        # var_bs
-        # bias_bs
-        # MSE_bs_ridge = np.zeros(nlambdas)
-        # var_bs = np.zeros(nlambdas)
-        # bias_bs = np.zeros(nlambdas)
-        #
-        # # Show the terrain
-        # plt.figure()
-        # plt.title("Terrain over Norway 1")
-        # plt.imshow(terrain1, cmap="gray")
-        # plt.xlabel("X")
-        # plt.ylabel("Y")
-        # plt.show()
