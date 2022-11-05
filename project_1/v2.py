@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from imageio.v3 import imread
+from imageio import imread
 from mpl_toolkits.mplot3d import Axes3D
 from random import random, seed
 from sklearn.linear_model import LinearRegression, Lasso
