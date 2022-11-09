@@ -128,8 +128,9 @@ class GD():
                 s = s / (1 - avg_time2)
                 i = 1
                 beta = beta0 - eta * m / (np.sqrt(s) + delta)
-
-                while np.linalg.norm(g) > eps:
+                j = 0
+                while np.linalg.norm(g) > eps and j < 1000:
+                    j += 1
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
@@ -149,8 +150,9 @@ class GD():
                 I = np.eye(dim1, dim2)
 
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
-
-                while np.linalg.norm(gradC[-1]) > eps:
+                i = 0
+                while np.linalg.norm(gradC[-1]) > eps and i < 1000:
+                    i += 1
                     gradC.append(2 / n * (DM.T @ (DM @ beta - y)))
                     k = len(gradC)
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
@@ -166,8 +168,9 @@ class GD():
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
                 s_prev = s
                 beta = beta0 - eta * g / np.sqrt(s + delta)
-
-                while np.linalg.norm(g) > eps:
+                i = 0
+                while np.linalg.norm(g) > eps and i < 1000:
+                    i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     beta -= eta * g / np.sqrt(s + delta)
@@ -198,8 +201,9 @@ class GD():
                 s = s / (1 - avg_time2)
                 i = 1
                 beta = beta0 - eta * m / (np.sqrt(s) + delta)
-
-                while np.linalg.norm(g) > eps:
+                j = 0
+                while np.linalg.norm(g) > eps and j < 1000:
+                    j += 1
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
@@ -219,8 +223,9 @@ class GD():
                 delta = 1e-8
                 G = gradC[0]@gradC[0].T
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
-
-                while np.linalg.norm(gradC[-1]) > eps:
+                i = 0
+                while np.linalg.norm(gradC[-1]) > eps and i < 1000:
+                    i += 1
                     gradC.append(2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta)
                     k = len(gradC)
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
@@ -236,8 +241,9 @@ class GD():
                 gradC = 2 / n * (DM.T @ (DM @ beta0 - y))
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
                 beta -= eta * g / np.sqrt(s + delta)
-
-                while np.linalg.norm(gradC) > eps:
+                i = 0
+                while np.linalg.norm(gradC) > eps and i < 1000:
+                    i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     beta -= eta * g / np.sqrt(s + delta)
@@ -252,7 +258,9 @@ class GD():
 
                 with np.printoptions(precision=3):
                     print(f"Performing Ridge regression using PlainGD with initial values = " ,(*beta0))
-                while np.linalg.norm(gradC) > eps:
+                i = 0
+                while np.linalg.norm(gradC) > eps and i < 1000:
+                    i += 1
                     gradC = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     beta -= eta * gradC
 
@@ -300,8 +308,9 @@ class GD():
                 s = s / (1 - avg_time2)
                 i = 1
                 beta = beta0 - eta * m / (np.sqrt(s) + delta)
-
-                while np.linalg.norm(g) > eps:
+                j = 0
+                while np.linalg.norm(g) > eps and j < 1000:
+                    j += 1
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
@@ -322,8 +331,9 @@ class GD():
                 v_prev = 0
                 G = gradC[0]@gradC[0].T
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
-
-                while np.linalg.norm(gradC[-1]) > eps:
+                i = 0
+                while np.linalg.norm(gradC[-1]) > eps and i < 1000:
+                    i += 1
                     gradC.append(2 / n * (DM.T @ (DM @ beta - y)))
                     k = len(gradC)
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
@@ -342,8 +352,9 @@ class GD():
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
                 s_prev = s
                 beta = beta0 - eta * g / np.sqrt(s + delta)
-
-                while np.linalg.norm(gradC) > eps:
+                i = 0
+                while np.linalg.norm(gradC) > eps and i < 1000:
+                    i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     v = gamma * v_prev + eta * g / np.sqrt(s + delta)
@@ -357,8 +368,9 @@ class GD():
                 gradC = 2 / n * (DM.T @ (DM @ beta0 - y))
                 v_prev = 0
                 beta = beta0 - eta * gradC
-
-                while np.linalg.norm(gradC) > eps:
+                i = 0
+                while np.linalg.norm(gradC) > eps and i < 1000:
+                    i += 1
                     gradC = 2 / n * (DM.T @ (DM @ beta - y))
                     v = v_prev * gamma + eta * gradC
                     beta -= v
@@ -382,8 +394,8 @@ class GD():
                 s = s / (1 - avg_time2)
                 i = 1
                 beta = beta0 - eta * m / (np.sqrt(s) + delta)
-
-                while np.linalg.norm(g) > eps:
+                j = 0
+                while np.linalg.norm(g) > eps and j < 1000:
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
@@ -405,8 +417,9 @@ class GD():
                 G = gradC[0]@gradC[0].T
                 v_prev = 0
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
-
-                while np.linalg.norm(gradC[-1]) > eps:
+                i = 0
+                while np.linalg.norm(gradC[-1]) > eps and i < 1000:
+                    i += 1
                     gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
                     k = len(gradC)
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
@@ -424,8 +437,9 @@ class GD():
                 g = 2 / n * (DM.T @ (DM @ beta0 - y))
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
                 beta -= eta * g / np.sqrt(s + delta)
-
-                while np.linalg.norm(gradC) > eps:
+                i = 0
+                while np.linalg.norm(gradC) > eps and i < 1000:
+                    i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     v = gamma * v_prev + eta * g / np.sqrt(s + delta)
