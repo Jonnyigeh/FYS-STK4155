@@ -149,8 +149,8 @@ class GD():
                 I = np.eye(dim1, dim2)
 
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
-                
-                while np.linalg.norm(gradC) > eps:
+
+                while np.linalg.norm(gradC[-1]) > eps:
                     gradC.append(2 / n * (DM.T @ (DM @ beta - y)))
                     k = len(gradC)
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
@@ -173,15 +173,15 @@ class GD():
                     beta -= eta * g / np.sqrt(s + delta)
                     s_prev = s
             else:
-                breakpoint()
+
                 gradC = 2 / n * (DM.T @ (DM @ beta0 - y))
                 beta = beta0 - eta * gradC
                 while np.linalg.norm(gradC) > eps:
                     gradC = 2 / n * (DM.T @ (DM @ beta - y))
                     beta -= eta * gradC
-            
+
             ref_beta = np.linalg.pinv(DM.T @ DM) @ DM.T @ y
-            
+
 
 
         if method=="Ridge":
@@ -220,7 +220,7 @@ class GD():
                 G = gradC[0]@gradC[0].T
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
 
-                while np.linalg.norm(gradC) > eps:
+                while np.linalg.norm(gradC[-1]) > eps:
                     gradC.append(2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta)
                     k = len(gradC)
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
@@ -323,7 +323,7 @@ class GD():
                 G = gradC[0]@gradC[0].T
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
 
-                while np.linalg.norm(gradC) > eps:
+                while np.linalg.norm(gradC[-1]) > eps:
                     gradC.append(2 / n * (DM.T @ (DM @ beta - y)))
                     k = len(gradC)
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
@@ -406,7 +406,7 @@ class GD():
                 v_prev = 0
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
 
-                while np.linalg.norm(gradC) > eps:
+                while np.linalg.norm(gradC[-1]) > eps:
                     gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
                     k = len(gradC)
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
@@ -864,11 +864,11 @@ if __name__ == "__main__":
     np.random.seed(2001)
     x = np.linspace(0,1,100)
     inst = GD(x, 2)
-    
+
     designmatrix = inst.DM
     ydata = inst.y
 
-    
+
     ols_beta1 = inst.PlainGD()
     ols_beta2 = inst.MGD()
     ols_beta3 = inst.SGD()
@@ -876,13 +876,13 @@ if __name__ == "__main__":
 
     ridge_beta1 = inst.PlainGD(method="Ridge")
     ridge_beta2 = inst.MGD(method="Ridge")
-    ridge_beta3 = inst.SGD(method="Ridge")    
+    ridge_beta3 = inst.SGD(method="Ridge")
     ridge_beta4 = inst.SMGD(method="Ridge")
 
 #OLS
     model1_ols = designmatrix @ ols_beta1
     mse1_ols = inst.MSE(ydata, model1_ols)
-    
+
     model2_ols = designmatrix @ ols_beta2
     mse2_ols = inst.MSE(ydata,model2_ols)
 
@@ -895,7 +895,7 @@ if __name__ == "__main__":
 #RIDGE
     model1_ridge = designmatrix @ ridge_beta1
     mse1_ridge = inst.MSE(ydata, model1_ridge)
-    
+
     model2_ridge = designmatrix @ ridge_beta2
     mse2_ridge = inst.MSE(ydata,model2_ridge)
 
@@ -907,8 +907,8 @@ if __name__ == "__main__":
     lrates = [""]
 
     print(f"MSE of GD: {mse1_ols}")
-    
-    
+
+
     #Plotting
     # plt.plot(x,ydata,label = "ydata with noise",linestyle ='*',color='m')
     # plt.plot(x,model1_ols, label = "Plain GD")
@@ -917,8 +917,8 @@ if __name__ == "__main__":
 
     # plt.legend(loc="lower right",prop={'size': 8})
     # plt.show()
-    
-    
+
+
 
 
 

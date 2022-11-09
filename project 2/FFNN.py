@@ -17,7 +17,7 @@ class NeuralNetwork:
             epochs=10,
             batch_size=100,
             eta=0.1,
-            lmbd=0.0):
+            lmbd=0.0,classifier=True,regression=False):
 
         self.X_data_full = X_data
         self.Y_data_full = Y_data
@@ -25,7 +25,12 @@ class NeuralNetwork:
         self.n_inputs = X_data.shape[0]
         self.n_features = X_data.shape[1]
         self.n_hidden_neurons = n_hidden_neurons
-        self.n_categories = n_categories
+
+        if classifier:
+            self.n_categories = n_categories
+
+        if regression:
+            self.n_categories = self.n_inputs               # Only a single output y
 
         self.epochs = epochs
         self.batch_size = batch_size
@@ -34,6 +39,7 @@ class NeuralNetwork:
         self.lmbd = lmbd
 
         self.create_biases_and_weights()
+
     def act_func(self, x, sigmoid=True):
         if sigmoid:
             return 1 / (1 + np.exp(-x))
@@ -63,7 +69,7 @@ class NeuralNetwork:
 
         z_o = np.matmul(a_h, self.output_weights) + self.output_bias
 
-        exp_term = np.exp(z_o)              # Softmax output activation function
+        exp_term = np.exp(z_o)                    # Softmax output activation function
         probabilities = exp_term / np.sum(exp_term, axis=1, keepdims=True)
         return probabilities
 
@@ -81,6 +87,7 @@ class NeuralNetwork:
             self.output_weights_gradient += self.lmbd * self.output_weights
             self.hidden_weights_gradient += self.lmbd * self.hidden_weights
 
+        # Here we do regular stochastic gradient descent with constant learning rate eta
         self.output_weights -= self.eta * self.output_weights_gradient
         self.output_bias -= self.eta * self.output_bias_gradient
         self.hidden_weights -= self.eta * self.hidden_weights_gradient
@@ -121,6 +128,7 @@ def to_categorical_numpy(integer_vector):
 
 
 if __name__ == "__main__":
+    # Run this for classifier of handwritten images
     digits = datasets.load_digits()
     inputs = digits.images
     labels = digits.target
@@ -129,6 +137,18 @@ if __name__ == "__main__":
     Y_train_oh, Y_test_oh = to_categorical_numpy(Y_train), to_categorical_numpy(Y_test)
     dnn = NeuralNetwork(X_train,Y_train_oh,eta=0.01,lmbd=0,epochs=100,n_hidden_neurons=100)
     dnn.train()
+    breakpoint()
     test_predict = dnn.predict(X_test)
     score = accuracy_score(Y_test, test_predict)
-    breakpoint()
+    # Run this to perform regression (hopefully)
+    # n_datapoints = 100
+    # f = lambda x:  8 + 2 * x + 4 * x ** 2
+    # x = np.linspace(0,1,n_datapoints)
+    # y = f(x) + 0.5 * np.random.randn(len(x))
+    # deg_fit = 2
+    # X = np.ones((len(x), deg_fit+1))
+    # for i in range(1, deg_fit+1):
+    #     X[:,i] = x ** i
+    # X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.3)
+    # dnn = NeuralNetwork(X_train,Y_train,eta=0.01,lmbd=0,epochs=100,n_hidden_neurons=50)
+    # breakpoint()
