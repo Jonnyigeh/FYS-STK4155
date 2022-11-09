@@ -149,7 +149,7 @@ class GD():
                 dim1, dim2 = np.shape(G)
                 I = np.eye(dim1, dim2)
 
-                beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 1000:
                     i += 1
@@ -158,7 +158,8 @@ class GD():
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
+
+                    beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
 
             elif RMSprop:
                 avg_time = 0.9
@@ -219,10 +220,12 @@ class GD():
 
             elif ADAGRAD:
                 gradC = []
-                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
+                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta0)
                 delta = 1e-8
                 G = gradC[0]@gradC[0].T
-                beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
+                dim1, dim2 = np.shape(G)
+                I = np.eye(dim1, dim2)
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 1000:
                     i += 1
@@ -231,7 +234,7 @@ class GD():
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
+                    beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
 
 
             elif RMSprop:
@@ -330,7 +333,7 @@ class GD():
                 delta = 1e-8
                 v_prev = 0
                 G = gradC[0]@gradC[0].T
-                beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 1000:
                     i += 1
@@ -339,7 +342,7 @@ class GD():
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    v = gamma * v_prev + eta * 1 / np.sqrt(np.diag(G + delta * I))
+                    v = gamma * v_prev + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
                     beta -= v
                     v_prev = v
 
@@ -416,7 +419,7 @@ class GD():
                 delta = 1e-8
                 G = gradC[0]@gradC[0].T
                 v_prev = 0
-                beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 1000:
                     i += 1
@@ -425,7 +428,7 @@ class GD():
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    v = gamma * v_prev + eta * 1 / np.sqrt(np.diag(G + delta * I))
+                    v = gamma * v_prev + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
                     beta -= v
                     v_prev = v
 
@@ -544,7 +547,7 @@ class GD():
                         G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
+                        beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
 
 
             elif RMSprop:
@@ -620,7 +623,7 @@ class GD():
                         G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
+                        beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
 
 
 
@@ -736,7 +739,7 @@ class GD():
                         G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        v = v_prev * gamma + eta * 1 / np.sqrt(np.diag(G + delta * I))
+                        v = v_prev * gamma + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
                         beta -= v
 
 
@@ -824,7 +827,7 @@ class GD():
                         G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        v = v_prev * gamma + eta * 1 / np.sqrt(np.diag(G + delta * I))
+                        v = v_prev * gamma + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
                         beta -= v
                         v_prev = v
 
@@ -895,6 +898,7 @@ if __name__ == "__main__":
 
 #OLS
     model1_ols = designmatrix @ ols_beta1
+    breakpoint()
     mse1_ols = inst.MSE(ydata, model1_ols)
 
     model2_ols = designmatrix @ ols_beta2
