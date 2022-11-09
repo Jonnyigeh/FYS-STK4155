@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import seaborn as sns
+
 
 # from random import random, seed'
 
@@ -92,7 +94,7 @@ class GD():
         r2 = 1 - np.sum((Z.ravel() - Z_model) ** 2) / np.sum((Z.ravel() - Z_mean) **2)
         return r2
 
-    def PlainGD(self, eta = 0.01, eps = 10 ** (-8), lmbda = 0.001, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+    def PlainGD(self, eta = 0.02, eps = 10 ** (-8), lmbda = 0.02, method= "OLS", RMSprop=False, ADAGRAD=True, ADAM=False, check_equality = False):
         """Performs linear regression using Plain Gradient Descent
 
         args:
@@ -138,25 +140,23 @@ class GD():
                     beta -= eta * m / (np.sqrt(s) + delta)
                     m_prev = m
                     s_prev = s
-
-
-
-
             elif ADAGRAD:
-                grad = []
-                grad.append(2 / n * (DM.T @ (DM @ beta0 - y)))
+                gradC = []
+                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)))
                 delta = 1e-8
-                G = grad[0]@grad[0].T
-                beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
+                G = gradC[0]@gradC[0].T
+                dim1, dim2 = np.shape(G)
+                I = np.eye(dim1, dim2)
 
+                beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
+                
                 while np.linalg.norm(gradC) > eps:
-                    grad.append(2 / n * (DM.T @ (DM @ beta - y)))
-                    k = len(grad)
-                    G = sum(grad[i]@grad[i].T for i in range(k))
+                    gradC.append(2 / n * (DM.T @ (DM @ beta - y)))
+                    k = len(gradC)
+                    G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
                     beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
-
 
             elif RMSprop:
                 avg_time = 0.9
@@ -167,22 +167,21 @@ class GD():
                 s_prev = s
                 beta = beta0 - eta * g / np.sqrt(s + delta)
 
-                while np.linalg.norm(gradC) > eps:
+                while np.linalg.norm(g) > eps:
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     beta -= eta * g / np.sqrt(s + delta)
                     s_prev = s
-
-
             else:
+                breakpoint()
                 gradC = 2 / n * (DM.T @ (DM @ beta0 - y))
                 beta = beta0 - eta * gradC
-
                 while np.linalg.norm(gradC) > eps:
                     gradC = 2 / n * (DM.T @ (DM @ beta - y))
                     beta -= eta * gradC
-
+            
             ref_beta = np.linalg.pinv(DM.T @ DM) @ DM.T @ y
+            
 
 
         if method=="Ridge":
@@ -215,16 +214,16 @@ class GD():
 
 
             elif ADAGRAD:
-                grad = []
-                grad.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
+                gradC = []
+                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
                 delta = 1e-8
-                G = grad[0]@grad[0].T
+                G = gradC[0]@gradC[0].T
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
 
                 while np.linalg.norm(gradC) > eps:
-                    grad.append(2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta)
-                    k = len(grad)
-                    G = sum(grad[i]@grad[i].T for i in range(k))
+                    gradC.append(2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta)
+                    k = len(gradC)
+                    G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
                     beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
@@ -234,7 +233,7 @@ class GD():
                 avg_time = 0.9
                 delta = 1e-8
                 s_prev = 0
-                g = 2 / n * (DM.T @ (DM @ beta0 - y))
+                gradC = 2 / n * (DM.T @ (DM @ beta0 - y))
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
                 beta -= eta * g / np.sqrt(s + delta)
 
@@ -257,7 +256,7 @@ class GD():
                     gradC = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     beta -= eta * gradC
 
-            ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
+            ref_beta = np.linalg.pinv(DM.T @ DM + lmbda * I ) @ DM.T @ y
 
 
         if check_equality:
@@ -265,8 +264,8 @@ class GD():
 
 
         return beta
-
-    def MGD(self, eta = 0.01, eps = 10 ** (-8), gamma = 0.9, lmbda = 0.001, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+        breakpoint()
+    def MGD(self, eta = 0.01, eps = 10 ** (-8), gamma = 0.9, lmbda = 0.01, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
         """Performs linear regression using Plain Gradient Descent with momentum
 
         args:
@@ -317,17 +316,17 @@ class GD():
 
 
             elif ADAGRAD:
-                grad = []
-                grad.append(2 / n * (DM.T @ (DM @ beta0 - y)))
+                gradC = []
+                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)))
                 delta = 1e-8
                 v_prev = 0
-                G = grad[0]@grad[0].T
+                G = gradC[0]@gradC[0].T
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
 
                 while np.linalg.norm(gradC) > eps:
-                    grad.append(2 / n * (DM.T @ (DM @ beta - y)))
-                    k = len(grad)
-                    G = sum(grad[i]@grad[i].T for i in range(k))
+                    gradC.append(2 / n * (DM.T @ (DM @ beta - y)))
+                    k = len(gradC)
+                    G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
                     v = gamma * v_prev + eta * 1 / np.sqrt(np.diag(G + delta * I))
@@ -400,17 +399,17 @@ class GD():
 
 
             elif ADAGRAD:
-                grad = []
-                grad.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
+                gradC = []
+                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
                 delta = 1e-8
-                G = grad[0]@grad[0].T
+                G = gradC[0]@gradC[0].T
                 v_prev = 0
                 beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
 
                 while np.linalg.norm(gradC) > eps:
-                    grad.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
-                    k = len(grad)
-                    G = sum(grad[i]@grad[i].T for i in range(k))
+                    gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
+                    k = len(gradC)
+                    G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
                     v = gamma * v_prev + eta * 1 / np.sqrt(np.diag(G + delta * I))
@@ -518,7 +517,7 @@ class GD():
 
 
             elif ADAGRAD:
-                grad = []
+                gradC = []
                 delta = 1e-8
                 for epoch in range(n_epochs):
                     for i in range(m_):
@@ -526,9 +525,9 @@ class GD():
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
                         yi = y[k*M:k*M + M]
-                        grad.append(2 / M * (DMi.T @ (DMi @ beta - yi)))
-                        k = len(grad)
-                        G = sum(grad[j]@grad[j].T for j in range(k))
+                        gradC.append(2 / M * (DMi.T @ (DMi @ beta - yi)))
+                        k = len(gradC)
+                        G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
                         beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
@@ -594,7 +593,7 @@ class GD():
 
 
             elif ADAGRAD:
-                grad = []
+                gradC = []
                 delta = 1e-8
                 for epoch in range(n_epochs):
                     for i in range(m_):
@@ -602,9 +601,9 @@ class GD():
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
                         yi = y[k*M:k*M + M]
-                        grad.append(2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta)
-                        k = len(grad)
-                        G = sum(grad[j]@grad[j].T for j in range(k))
+                        gradC.append(2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta)
+                        k = len(gradC)
+                        G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
                         beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
@@ -710,7 +709,7 @@ class GD():
 
 
             elif ADAGRAD:
-                grad = []
+                gradC = []
                 delta = 1e-8
                 for epoch in range(n_epochs):
                     for i in range(m_):
@@ -718,9 +717,9 @@ class GD():
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
                         yi = y[k*M:k*M + M]
-                        grad.append(2 / M * (DMi.T @ (DMi @ beta - yi)))
-                        k = len(grad)
-                        G = sum(grad[j]@grad[j].T for j in range(k))
+                        gradC.append(2 / M * (DMi.T @ (DMi @ beta - yi)))
+                        k = len(gradC)
+                        G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
                         v = v_prev * gamma + eta * 1 / np.sqrt(np.diag(G + delta * I))
@@ -798,7 +797,7 @@ class GD():
 
 
             elif ADAGRAD:
-                grad = []
+                gradC = []
                 delta = 1e-8
                 for epoch in range(n_epochs):
                     for i in range(m_):
@@ -806,9 +805,9 @@ class GD():
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
                         yi = y[k*M:k*M + M]
-                        grad.append(2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta)
-                        k = len(grad)
-                        G = sum(grad[j]@grad[j].T for j in range(k))
+                        gradC.append(2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta)
+                        k = len(gradC)
+                        G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
                         v = v_prev * gamma + eta * 1 / np.sqrt(np.diag(G + delta * I))
@@ -861,16 +860,74 @@ class GD():
 
 
 if __name__ == "__main__":
+    sns.set_theme()
     np.random.seed(2001)
-    x = np.linspace(0,1,1000)
+    x = np.linspace(0,1,100)
     inst = GD(x, 2)
+    
+    designmatrix = inst.DM
+    ydata = inst.y
+
+    
     ols_beta1 = inst.PlainGD()
     ols_beta2 = inst.MGD()
+    ols_beta3 = inst.SGD()
+    ols_beta4 = inst.SMGD()
+
     ridge_beta1 = inst.PlainGD(method="Ridge")
     ridge_beta2 = inst.MGD(method="Ridge")
-    ols_beta3 = inst.SGD()
-    ridge_beta3 = inst.SGD(method="Ridge")
-    ols_beta4 = inst.SMGD()
+    ridge_beta3 = inst.SGD(method="Ridge")    
     ridge_beta4 = inst.SMGD(method="Ridge")
+
+#OLS
+    model1_ols = designmatrix @ ols_beta1
+    mse1_ols = inst.MSE(ydata, model1_ols)
+    
+    model2_ols = designmatrix @ ols_beta2
+    mse2_ols = inst.MSE(ydata,model2_ols)
+
+    model3_ols = designmatrix @ ols_beta3
+    mse3_ols = inst.MSE(ydata,model3_ols)
+
+    model4_ols = designmatrix @ ols_beta4
+    mse4_ols = inst.MSE(ydata,model4_ols)
+
+#RIDGE
+    model1_ridge = designmatrix @ ridge_beta1
+    mse1_ridge = inst.MSE(ydata, model1_ridge)
+    
+    model2_ridge = designmatrix @ ridge_beta2
+    mse2_ridge = inst.MSE(ydata,model2_ridge)
+
+    model3_ridge = designmatrix @ ridge_beta3
+    mse3_ridge = inst.MSE(ydata,model3_ridge)
+
+    model4_ridge = designmatrix @ ridge_beta4
+    mse4_ridge = inst.MSE(ydata,model4_ridge)
     lrates = [""]
-    breakpoint()
+
+    print(f"MSE of GD: {mse1_ols}")
+    
+    
+    #Plotting
+    # plt.plot(x,ydata,label = "ydata with noise",linestyle ='*',color='m')
+    # plt.plot(x,model1_ols, label = "Plain GD")
+    # plt.plot(x,model3_ols,label ="Stochastic GD")
+    # plt.plot(x,model4_ols,label="Stochastic GD with momentum")
+
+    # plt.legend(loc="lower right",prop={'size': 8})
+    # plt.show()
+    
+    
+
+
+
+
+
+# # Load the example flights dataset and convert to long-form
+# flights_long = sns.load_dataset("flights")
+# flights = flights_long.pivot("month", "year", "passengers")
+
+# # Draw a heatmap with the numeric values in each cell
+# f, ax = plt.subplots(figsize=(9, 6))
+# sns.heatmap(flights, annot=True, fmt="d", linewidths=.5, ax=ax)

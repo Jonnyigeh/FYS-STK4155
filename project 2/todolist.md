@@ -1,7 +1,7 @@
 ## Kode
 
 # Part A:
-Har unnagjort første 2 deloppgaver - Plain Gradient Descent og Momentum PGD.
+Har unnagjort første 2 deloppgaver - Plain Gradient Descent(PGD) og Momentum PGD.
 Startet på kode for SGD. Mangler å tenke ut hvordan man skal bestemme
 kriterium for å stoppe beregning.
 Virker som man starter en helt ny beregning av gradient i hver minibatch, men gir dette mening?
