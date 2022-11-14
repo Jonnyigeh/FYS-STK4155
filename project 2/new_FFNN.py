@@ -40,7 +40,7 @@ class Layer():
         self.input = input_value
         self.hidden_val = self.input @ self.weights + self.bias
         self.output = self.activation_function(self.hidden_val)
-        breakpoint()
+
         return self.output
 
     def backward_prop(self, error_prev_layer, lmbda):
@@ -49,6 +49,7 @@ class Layer():
             self.grad_b = np.sum(error_prev_layer, axis=0)
             if lmbda > 0.0:
                 self.grad_w += lmbda * self.weights
+
             self.error_layer = error_prev_layer @ self.weights.T * self.grad_activation_function(self.output)
 
             return self.error_layer
@@ -58,6 +59,11 @@ class Layer():
             self.grad_b = np.sum(self.error_layer, axis=0)
         if lmbda > 0.0:
             self.grad_w += lmbda * self.weights
+
+        # To avoid exploding gradients, we do gradient clipping
+        # by removing a factor of 10 when the gradient exceed some threshold
+        self.grad_w = np.where(self.grad_w > 10, 0.1 * self.grad_w, self.grad_w)
+        self.grad_b[self.grad_b>10] = 0.1
 
         return self.error_layer
 
@@ -146,8 +152,6 @@ class NeuralNetwork():
         self.actual_output = output_layer.forward_prop(output_prev)
 
 
-
-
     def feed_forward_out(self, X, Y):
         input_layer = self.layers[0]
         output_prev = input_layer.forward_prop(X)
@@ -169,13 +173,16 @@ class NeuralNetwork():
     def backpropagation(self):
         output_error = (self.actual_output - self.Y_data) / self.Y_data.size
         output_layer = self.layers[-1]
-
+        breakpoint()
         error_prev = output_layer.backward_prop(output_error, self.lmbd)
+        # if np.any(np.abs(error_prev) > 100):
+        #     print("Wow thats really wrong")
+        #     breakpoint()
         # Now backpropagate through all the hidden layers
         for l in range(self.n_hidden_layers)[::-1]:
-            if np.any(np.isnan(error_prev)):
-                print("Gradient is fucked")
-                breakpoint()
+            # if np.any(np.isinf(error_prev)):
+            #     print("Gradient is fucked")
+            #     breakpoint()
             hidden_layer = self.layers[l+1]
             error_hidden = hidden_layer.backward_prop(error_prev, self.lmbd)
             error_prev = error_hidden
@@ -188,9 +195,9 @@ class NeuralNetwork():
             hidden_layer.weights -= self.eta * hidden_layer.grad_w
             hidden_layer.bias -= self.eta * hidden_layer.grad_b
 
-            if np.any(np.isnan(hidden_layer.weights)):
-                print("weights are fucked")
-                breakpoint()
+            # if np.any(np.isnan(hidden_layer.weights)):
+            #     print("weights are fucked")
+            #     breakpoint()
 
 
         output_layer.weights -= self.eta * output_layer.grad_w
@@ -232,7 +239,7 @@ class NeuralNetwork():
 
 if __name__  == "__main__":
     # Run this to perform regression (hopefully)
-    n_datapoints = 1000
+    n_datapoints = 100
     f = lambda x:  8 + 2 * x + 4 * x ** 2
     x = np.linspace(0,1,n_datapoints)
     y = f(x) + 0.5 * np.random.randn(len(x))
@@ -242,7 +249,7 @@ if __name__  == "__main__":
     for i in range(1, deg_fit+1):
         X[:,i] = x ** i
     X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.3)
-    dnn = NeuralNetwork(X_train,Y_train,eta=0.001,lmbd=0.1,epochs=50,n_hidden_neurons=10)
+    dnn = NeuralNetwork(X_train,Y_train,batch_size=10,eta=0.001,lmbd=0.001,epochs=50,n_hidden_neurons=25)
     dnn.train()
     pred_test, error_est_test = dnn.predict(X_test,Y_test)
     pred_train, error_est_train = dnn.predict(X_train, Y_train)
