@@ -94,7 +94,9 @@ class GD():
         r2 = 1 - np.sum((Z.ravel() - Z_model) ** 2) / np.sum((Z.ravel() - Z_mean) **2)
         return r2
 
-    def PlainGD(self, eta = 0.02, eps = 10 ** (-8), lmbda = 0.02, method= "OLS", RMSprop=False, ADAGRAD=True, ADAM=False, check_equality = False):
+    def PlainGD(self, eta = 2.3, eps = 10 ** (-8), lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+
+
         """Performs linear regression using Plain Gradient Descent
 
         args:
@@ -111,7 +113,6 @@ class GD():
         beta0 = self.beta0
         DM = self.DM
         y = self.y.reshape(n,1)
-
         if method=="OLS":
             with np.printoptions(precision=3):
                 print(f"Performing OLS regression using PlainGD with initial values = " ,(*beta0))
@@ -151,7 +152,7 @@ class GD():
 
                 beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
                 i = 0
-                while np.linalg.norm(gradC[-1]) > eps and i < 1000:
+                while np.linalg.norm(gradC[-1]) > eps and i < 2000:
                     i += 1
                     gradC.append(2 / n * (DM.T @ (DM @ beta - y)))
                     k = len(gradC)
@@ -184,9 +185,7 @@ class GD():
                     gradC = 2 / n * (DM.T @ (DM @ beta - y))
                     beta -= eta * gradC
 
-            ref_beta = np.linalg.pinv(DM.T @ DM) @ DM.T @ y
-
-
+            # ref_beta = np.linalg.pinv(DM.T @ DM) @ DM.T @ y
 
         if method=="Ridge":
             if ADAM:
@@ -216,8 +215,6 @@ class GD():
                     m_prev = m
                     s_prev = s
 
-
-
             elif ADAGRAD:
                 gradC = []
                 gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta0)
@@ -236,18 +233,17 @@ class GD():
                     I = np.eye(dim1, dim2)
                     beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
 
-
             elif RMSprop:
                 avg_time = 0.9
                 delta = 1e-8
                 s_prev = 0
-                gradC = 2 / n * (DM.T @ (DM @ beta0 - y))
+                g = 2 / n * (DM.T @ (DM @ beta0 - y))
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
-                beta -= eta * g / np.sqrt(s + delta)
+                beta = beta0 - eta * g / np.sqrt(s + delta)
                 i = 0
-                while np.linalg.norm(gradC) > eps and i < 1000:
+                while np.linalg.norm(g) > eps and i < 1000:
                     i += 1
-                    g = 2 / n * (DM.T @ (DM @ beta - y))
+                    g = 2 / n * (DM.T @ (DM @ beta0 - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     beta -= eta * g / np.sqrt(s + delta)
                     s_prev = s
@@ -262,21 +258,19 @@ class GD():
                 with np.printoptions(precision=3):
                     print(f"Performing Ridge regression using PlainGD with initial values = " ,(*beta0))
                 i = 0
-                while np.linalg.norm(gradC) > eps and i < 1000:
+                while np.linalg.norm(gradC) > eps and i < 2000:
                     i += 1
                     gradC = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     beta -= eta * gradC
 
-            ref_beta = np.linalg.pinv(DM.T @ DM + lmbda * I ) @ DM.T @ y
-
+            # ref_beta = np.linalg.pinv(DM.T @ DM + lmbda * I ) @ DM.T @ y
 
         if check_equality:
             np.testing.assert_allclose(beta, ref_beta, rtol=1e-3, atol=1e-3)
 
-
         return beta
-        breakpoint()
-    def MGD(self, eta = 0.01, eps = 10 ** (-8), gamma = 0.9, lmbda = 0.01, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+   
+    def MGD(self, eta = 0.001, eps = 10 ** (-8), gamma = , lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
         """Performs linear regression using Plain Gradient Descent with momentum
 
         args:
@@ -333,6 +327,8 @@ class GD():
                 delta = 1e-8
                 v_prev = 0
                 G = gradC[0]@gradC[0].T
+                dim1, dim2 = np.shape(G)
+                I = np.eye(dim1, dim2)
                 beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 1000:
@@ -356,7 +352,7 @@ class GD():
                 s_prev = s
                 beta = beta0 - eta * g / np.sqrt(s + delta)
                 i = 0
-                while np.linalg.norm(gradC) > eps and i < 1000:
+                while np.linalg.norm(g) > eps and i < 1000:
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
@@ -415,10 +411,12 @@ class GD():
 
             elif ADAGRAD:
                 gradC = []
-                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
+                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta0)
                 delta = 1e-8
                 G = gradC[0]@gradC[0].T
                 v_prev = 0
+                dim1, dim2 = np.shape(G)
+                I = np.eye(dim1, dim2)
                 beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 1000:
@@ -439,9 +437,9 @@ class GD():
                 v_prev = 0
                 g = 2 / n * (DM.T @ (DM @ beta0 - y))
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
-                beta -= eta * g / np.sqrt(s + delta)
+                beta = beta0 - eta * g / np.sqrt(s + delta)
                 i = 0
-                while np.linalg.norm(gradC) > eps and i < 1000:
+                while np.linalg.norm(g) > eps and i < 1000:
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
@@ -460,8 +458,10 @@ class GD():
                 gradC = 2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta0
                 beta = beta0 - eta * gradC
                 v_prev = 0
+                i = 0
 
-                while np.linalg.norm(gradC) > eps:
+                while np.linalg.norm(gradC) > eps and i < 1000:
+                    i += 1
                     gradC = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     v = v_prev * gamma + eta * gradC
                     beta -= v
@@ -470,7 +470,7 @@ class GD():
 
 
 
-            ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
+            # ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
 
         if check_equality:
             np.testing.assert_allclose(beta, ref_beta, rtol=1e-3, atol=1e-3)
@@ -478,11 +478,13 @@ class GD():
 
         return beta
 
-    def SGD(self, M = 50, n_epochs = 100, lmbda = 0.001, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+
+    def SGD(self,eta =0.001, M = 50, n_epochs = 5, lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
         """Performs linear regression using Stochastic Gradient Descent
                     using tunable learning rate. (see function *learning rate*)
 
         args:
+            eta               (float): Learning rate
             M                 (int)  : Size of minibatches
             n_epochs          (int)  : Number of epochs (iterations of all minibatches)
             lmbda             (float): Ridge parameter lambda
@@ -659,17 +661,19 @@ class GD():
 
 
             if check_equality:
-                XT_X = DM.T @ DM
-                ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
+                # XT_X = DM.T @ DM
+                # ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
                 np.testing.assert_allclose(beta, ref_beta, rtol=1e-3, atol=1e-3)
 
         return beta
 
-    def SMGD(self, M = 50, n_epochs = 100, gamma=0.9, lmbda = 0.001, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+    def SMGD(self,eta=0.001, M = 50, n_epochs = 100, gamma=0.001, lmbda = 0.001, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
         """Performs linear regression using Stochastic Gradient Descent with momentum
                 and a tunable learning rate. (see function learning rate).
 
         args:
+
+            eta               (float): Learning rate
             gamma             (float): Momentum parameter
             M                 (int)  : Size of minibatches
             n_epochs          (int)  : Number of epochs (iterations of all minibatches)
@@ -898,7 +902,6 @@ if __name__ == "__main__":
 
 #OLS
     model1_ols = designmatrix @ ols_beta1
-    breakpoint()
     mse1_ols = inst.MSE(ydata, model1_ols)
 
     model2_ols = designmatrix @ ols_beta2
@@ -923,9 +926,12 @@ if __name__ == "__main__":
     model4_ridge = designmatrix @ ridge_beta4
     mse4_ridge = inst.MSE(ydata,model4_ridge)
     lrates = [""]
+    print(f"MSE : {mse3_ridge}")
 
-    print(f"MSE of GD: {mse1_ols}")
-
+    # eta = [1,0.1,0.01,0.001,0.0001] 
+    # ols_mse_adagrad = [17.16,17.38,19.60,44.03,323.29]
+    # plt.plot()
+    # plt.show()
 
     #Plotting
     # plt.plot(x,ydata,label = "ydata with noise",linestyle ='*',color='m')
