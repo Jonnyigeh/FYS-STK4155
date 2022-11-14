@@ -241,11 +241,11 @@ class GD():
                 avg_time = 0.9
                 delta = 1e-8
                 s_prev = 0
-                gradC = 2 / n * (DM.T @ (DM @ beta0 - y))
+                g = 2 / n * (DM.T @ (DM @ beta0 - y))
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
                 beta -= eta * g / np.sqrt(s + delta)
                 i = 0
-                while np.linalg.norm(gradC) > eps and i < 1000:
+                while np.linalg.norm(g) > eps and i < 1000:
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2

@@ -8,6 +8,17 @@ from sys import exit
 
 np.random.seed(0)
 class Layer():
+    """ Classobject that will construct a single layer of a Neural Network. This will save
+    various parameters such as gradients, biases, weights etc. that belong in each layer.
+
+    args:
+        dimension_in            (int): Left side dimension of the weights matrix
+        dimension_out           (int): Right side dimension of the weights matrix and the width of the bias vector
+        act_func                (string): Specifies which activation function to be used in the layer (sigmoid, relu or linear)
+        input_layer             (bool): True if the layer is an input layer
+        output_layer            (bool): True if the layer is an output layer
+
+    """
     def __init__(
             self,
             dimension_in,
@@ -85,13 +96,7 @@ class Layer():
             return np.ones_like(x)
 
         if self.act_func=="relu":
-            return np.where(x>0, 1, 0.01 * x) # Leak ReLu
-
-        # if activation_function="relu":
-        #     if x <= 0:
-        #         return 0
-        #     else:
-        #         return 1
+            return np.where(x>0, 1, 0.01 * x) # Leaky ReLu
 
 
 class NeuralNetwork():
@@ -213,7 +218,7 @@ class NeuralNetwork():
                 chosen_datapoints = np.random.choice(
                     data_indices, size=self.batch_size, replace=False
                 )
-                # print("training...")
+                
                 # minibatch training data
                 self.X_data = self.X_data_full[chosen_datapoints]
                 self.Y_data = self.Y_data_full[chosen_datapoints]
