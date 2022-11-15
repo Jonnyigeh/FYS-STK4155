@@ -40,7 +40,7 @@ class Layer():
         self.input = input_value
         self.hidden_val = self.input @ self.weights + self.bias
         self.output = self.activation_function(self.hidden_val)
-        breakpoint()
+        
         return self.output
 
     def backward_prop(self, error_prev_layer, lmbda):
@@ -175,7 +175,7 @@ class NeuralNetwork():
         for l in range(self.n_hidden_layers)[::-1]:
             if np.any(np.isnan(error_prev)):
                 print("Gradient is fucked")
-                breakpoint()
+                
             hidden_layer = self.layers[l+1]
             error_hidden = hidden_layer.backward_prop(error_prev, self.lmbd)
             error_prev = error_hidden
@@ -190,13 +190,12 @@ class NeuralNetwork():
 
             if np.any(np.isnan(hidden_layer.weights)):
                 print("weights are fucked")
-                breakpoint()
-
+         
 
         output_layer.weights -= self.eta * output_layer.grad_w
         output_layer.bias -= self.eta * output_layer.grad_b
 
-    def train(self, show=False):
+    def train(self, show=True):
         data_indices = np.arange(self.n_inputs)
 
         for i in range(self.epochs):
