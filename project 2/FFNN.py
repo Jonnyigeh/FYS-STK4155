@@ -15,10 +15,12 @@ class NeuralNetwork():
             Y_data,
             n_hidden_layers=10,
             n_hidden_neurons=50,
+            n_categories=2,
             epochs=10,
             batch_size=10,
             eta=0.1,
-            lmbd=0.0):
+            lmbd=0.0,
+            classifier=False):
 
         self.X_data_full = X_data
         self.Y_data_full = Y_data
@@ -26,7 +28,10 @@ class NeuralNetwork():
         self.n_inputs = X_data.shape[0]
         self.n_features = X_data.shape[1]
         self.n_hidden_neurons = n_hidden_neurons
-        self.n_outputs = self.n_inputs
+        if classifier:
+            self.n_outputs = n_categories
+        else:
+            self.n_outputs = self.n_inputs
         self.n_hidden_layers = n_hidden_layers
 
         self.epochs = epochs
@@ -64,7 +69,9 @@ class NeuralNetwork():
         # And through output layer
         output_layer = self.layers[-1]
         self.actual_output = output_layer.forward_prop(output_prev)
-
+        if classifier:
+            self.actual_output[self.actual_output<0.5] = 0
+            self.actual_output[self.actual_output>=0.5] = 1
 
     def feed_forward_out(self, X, Y):
         input_layer = self.layers[0]
@@ -74,29 +81,32 @@ class NeuralNetwork():
             hidden_layer = self.layers[l+1]
             output = hidden_layer.forward_prop(output_prev)
             output_prev = output
+
         # And through output layer
         output_layer = self.layers[-1]
-        actual_output = output_layer.forward_prop(output_prev)
-        MSE = mean_squared_error(Y, actual_output)
-        r2 = r2_score(Y, actual_output)
-        error_estimates = (MSE, r2)
+        if classifier:
+            actual_output[actual_output<0.5] = 0
+            actual_output[actual_output>=0.5] = 1
+            error_estimate = accuracy_score(Y, actual_output)
+        else:
+            actual_output = output_layer.forward_prop(output_prev)
+            MSE = mean_squared_error(Y, actual_output)
+            r2 = r2_score(Y, actual_output)
+            error_estimates = (MSE, r2)
 
         return actual_output, error_estimates
 
 
     def backpropagation(self):
-        output_error = (self.actual_output - self.Y_data) / self.Y_data.size
+        if classifier:
+            output_error = (self.actual_output - self.Y_data)
+        else:
+            output_error = (self.actual_output - self.Y_data) / self.Y_data.size
         output_layer = self.layers[-1]
-        breakpoint()
         error_prev = output_layer.backward_prop(output_error, self.lmbd)
-        # if np.any(np.abs(error_prev) > 100):
-        #     print("Wow thats really wrong")
-        #     breakpoint()
+
         # Now backpropagate through all the hidden layers
         for l in range(self.n_hidden_layers)[::-1]:
-            # if np.any(np.isinf(error_prev)):
-            #     print("Gradient is fucked")
-            #     breakpoint()
             hidden_layer = self.layers[l+1]
             error_hidden = hidden_layer.backward_prop(error_prev, self.lmbd)
             error_prev = error_hidden
@@ -108,11 +118,6 @@ class NeuralNetwork():
             hidden_layer = self.layers[l+1]
             hidden_layer.weights -= self.eta * hidden_layer.grad_w
             hidden_layer.bias -= self.eta * hidden_layer.grad_b
-
-            # if np.any(np.isnan(hidden_layer.weights)):
-            #     print("weights are fucked")
-            #     breakpoint()
-
 
         output_layer.weights -= self.eta * output_layer.grad_w
         output_layer.bias -= self.eta * output_layer.grad_b
@@ -134,17 +139,19 @@ class NeuralNetwork():
 
                 self.feed_forward()
                 self.backpropagation()
-            # Calculates the MSE after each epoch, so we can plot and see hwo this changes throughout the training of the NN.
-            self.MSE_train.append(mean_squared_error(self.Y_data, self.actual_output))
+            if not classifier:
+                # Calculates the MSE after each epoch, so we can plot and see hwo this changes throughout the training of the NN.
+                self.MSE_train.append(mean_squared_error(self.Y_data, self.actual_output))
 
-        # Now we visualize how the MSE changes throughout the epochs
-        plt.plot(np.arange(0, self.epochs), self.MSE_train)
-        plt.title("MSE as a function of # epochs")
-        plt.ylabel("MSE")
-        plt.xlabel("Number of epochs")
-        plt.legend(["MSE score"])
-        if show:
-            plt.show()
+        if not classifier:
+            # Now we visualize how the MSE changes throughout the epochs
+            plt.plot(np.arange(0, self.epochs), self.MSE_train)
+            plt.title("MSE as a function of # epochs")
+            plt.ylabel("MSE")
+            plt.xlabel("Number of epochs")
+            plt.legend(["MSE score"])
+            if show:
+                plt.show()
 
     def predict(self, X, Y):
         output, error_est = self.feed_forward_out(X, Y)

@@ -20,15 +20,12 @@ class Layer():
             act_func="relu",
             input_layer=False,
             output_layer=False,
-            output_dimension=1):
+            ):
 
         self.dimension_in = dimension_in
         self.dimension_out = dimension_out
         self.act_func = act_func
         self.output_layer = output_layer
-        if output_layer:
-            self.act_func="linear"
-            self.dimension_out = output_dimension
 
         if input_layer:             # Input layer does not change the input, just changes the dimensionality.
             self.weights = np.eye(self.dimension_in, self.dimension_out)
