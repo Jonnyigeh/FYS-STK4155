@@ -885,7 +885,6 @@ if __name__ == "__main__":
     designmatrix = inst.DM
     ydata = inst.y
 
-
     ols_beta1 = inst.PlainGD()
     ols_beta2 = inst.MGD()
     ols_beta3 = inst.SGD()
@@ -896,7 +895,7 @@ if __name__ == "__main__":
     ridge_beta3 = inst.SGD(method="Ridge")
     ridge_beta4 = inst.SMGD(method="Ridge")
 
-#OLS
+    #OLS
     model1_ols = designmatrix @ ols_beta1
     breakpoint()
     mse1_ols = inst.MSE(ydata, model1_ols)
@@ -910,7 +909,7 @@ if __name__ == "__main__":
     model4_ols = designmatrix @ ols_beta4
     mse4_ols = inst.MSE(ydata,model4_ols)
 
-#RIDGE
+    #RIDGE
     model1_ridge = designmatrix @ ridge_beta1
     mse1_ridge = inst.MSE(ydata, model1_ridge)
 
@@ -942,10 +941,10 @@ if __name__ == "__main__":
 
 
 
-# # Load the example flights dataset and convert to long-form
-# flights_long = sns.load_dataset("flights")
-# flights = flights_long.pivot("month", "year", "passengers")
+    # # Load the example flights dataset and convert to long-form
+    # flights_long = sns.load_dataset("flights")
+    # flights = flights_long.pivot("month", "year", "passengers")
 
-# # Draw a heatmap with the numeric values in each cell
-# f, ax = plt.subplots(figsize=(9, 6))
-# sns.heatmap(flights, annot=True, fmt="d", linewidths=.5, ax=ax)
+    # # Draw a heatmap with the numeric values in each cell
+    # f, ax = plt.subplots(figsize=(9, 6))
+    # sns.heatmap(flights, annot=True, fmt="d", linewidths=.5, ax=ax)
