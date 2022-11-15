@@ -23,10 +23,10 @@ class Layer():
             self,
             dimension_in,
             dimension_out,
-            act_func="sigmoid",
+            act_func="relu",
             input_layer=False,
             output_layer=False,
-            output_dimension="Not defined"):
+            output_dimension=1):
 
         self.dimension_in = dimension_in
         self.dimension_out = dimension_out
@@ -34,14 +34,10 @@ class Layer():
         self.output_layer = output_layer
         if output_layer:
             self.act_func="linear"
-            self.dimension_out = 1
-        #     try:
-        #         self.dimension_out = float(output_dimension)
-        #     except ValueError:
-        #         print("Please specify output dimension")
+            self.dimension_out = output_dimension
 
-        if input_layer:
-            self.weights = np.ones((self.dimension_in, self.dimension_out))
+        if input_layer:             # Input layer does not change the input, just changes the dimensionality.
+            self.weights = np.eye(self.dimension_in, self.dimension_out)
             self.bias = np.zeros((1, self.dimension_out))
         else:
             self.weights = np.random.randn(self.dimension_in, self.dimension_out)
@@ -135,7 +131,7 @@ class NeuralNetwork():
             also adds an input layer with dimensions (n_features, n_neurons)
                 plus an output layer with dimensions (n_neurons, n_outputs)
         """
-        input_layer = Layer(self.n_features, self.n_hidden_neurons)
+        input_layer = Layer(self.n_features, self.n_hidden_neurons, input_layer=True)
         self.layers.append(input_layer)
         for l in range(self.n_hidden_layers):
             self.layers.append(Layer(self.n_hidden_neurons, self.n_hidden_neurons))
@@ -218,7 +214,7 @@ class NeuralNetwork():
                 chosen_datapoints = np.random.choice(
                     data_indices, size=self.batch_size, replace=False
                 )
-                
+
                 # minibatch training data
                 self.X_data = self.X_data_full[chosen_datapoints]
                 self.Y_data = self.Y_data_full[chosen_datapoints]
