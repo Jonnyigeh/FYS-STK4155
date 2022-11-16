@@ -100,8 +100,8 @@ if __name__ == "__main__":
             ytilde = lr.predict(test_data)
             yt_train = lr.predict(train_data)
             try:
-                train_accuracy[i][j] = accuracy_score(yt_train, train_target.reshape(yt_train.shape))
-                test_accuracy[i][j] = accuracy_score(ytilde, test_target.reshape(ytilde.shape))
+                train_accuracy[i][j] = accuracy_score(train_target.reshape(yt_train.shape), yt_train)
+                test_accuracy[i][j] = accuracy_score(test_target.reshape(ytilde.shape), ytilde)
             except ValueError:
                 breakpoint()
         # print("Accuracy score on training data " + str(accuracy_score(yt_train, train_target.reshape(yt_train.shape))))

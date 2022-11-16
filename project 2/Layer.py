@@ -17,7 +17,7 @@ class Layer():
             self,
             dimension_in,
             dimension_out,
-            act_func="relu",
+            act_func="sigmoid",
             input_layer=False,
             output_layer=False,
             ):
@@ -26,13 +26,10 @@ class Layer():
         self.dimension_out = dimension_out
         self.act_func = act_func
         self.output_layer = output_layer
+        self.input_layer = input_layer
 
-        if input_layer:             # Input layer does not change the input, just changes the dimensionality.
-            self.weights = np.eye(self.dimension_in, self.dimension_out)
-            self.bias = np.zeros((1, self.dimension_out))
-        else:
-            self.weights = np.random.randn(self.dimension_in, self.dimension_out)
-            self.bias = np.zeros((1, self.dimension_out)) + 0.01
+        self.weights = np.random.randn(self.dimension_in, self.dimension_out) / self.dimension_in
+        self.bias = np.zeros((1, self.dimension_out))
 
     def forward_prop(self, input_value):
         self.input = input_value
@@ -41,27 +38,30 @@ class Layer():
 
         return self.output
 
-    def backward_prop(self, error_prev_layer, lmbda):
+    def backward_prop(self, error_prev_layer, lmbda, weights_prev_layer = 0):
         if self.output_layer:
             self.grad_w = self.input.T @ error_prev_layer
-            self.grad_b = np.sum(error_prev_layer, axis=0)
+            self.grad_b = np.sum(error_prev_layer, axis=0, keepdims=True)
             if lmbda > 0.0:
                 self.grad_w += lmbda * self.weights
 
-            self.error_layer = error_prev_layer @ self.weights.T * self.grad_activation_function(self.output)
+            # self.error_layer = (error_prev_layer @ self.weights.T) * self.grad_activation_function(self.output)
 
-            return self.error_layer
+            return error_prev_layer
+
         else:
-            self.error_layer = error_prev_layer @ self.weights.T * self.grad_activation_function(self.output)
+            self.error_layer = (error_prev_layer @ weights_prev_layer.T) * self.grad_activation_function(self.output)
             self.grad_w = self.input.T @ self.error_layer
-            self.grad_b = np.sum(self.error_layer, axis=0)
+            self.grad_b = np.sum(self.error_layer, axis=0, keepdims=True)
         if lmbda > 0.0:
             self.grad_w += lmbda * self.weights
 
         # To avoid exploding gradients, we do gradient clipping
         # by removing a factor of 10 when the gradient exceed some threshold
-        self.grad_w = np.where(self.grad_w > 10, 0.1 * self.grad_w, self.grad_w)
-        self.grad_b[self.grad_b>10] = 0.1
+        # self.grad_w = np.where(self.grad_w > 100, 0.001 * self.grad_w, self.grad_w)
+        # self.grad_w = np.where(self.grad_w > 100, 0.1, self.grad_w)
+        #
+        # self.grad_b[self.grad_b>10] = 0.1
 
         return self.error_layer
 
@@ -83,4 +83,4 @@ class Layer():
             return np.ones_like(x)
 
         if self.act_func=="relu":
-            return np.where(x>0, 1, 0.01 * x) # Leaky ReLu
+            return np.where(x>0, 1, 0) # Leaky ReLu
