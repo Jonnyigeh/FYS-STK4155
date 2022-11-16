@@ -1,8 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import pandas as pd
 import seaborn as sns
-
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # from random import random, seed'
 
@@ -94,7 +96,7 @@ class GD():
         r2 = 1 - np.sum((Z.ravel() - Z_model) ** 2) / np.sum((Z.ravel() - Z_mean) **2)
         return r2
 
-    def PlainGD(self, eta = 2.3, eps = 10 ** (-8), lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+    def PlainGD(self, eta = 0.001, eps = 10 ** (-8), lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
 
 
         """Performs linear regression using Plain Gradient Descent
@@ -270,7 +272,7 @@ class GD():
 
         return beta
    
-    def MGD(self, eta = 0.001, eps = 10 ** (-8), gamma = , lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+    def MGD(self, eta = 0.001, eps = 10 ** (-8), gamma = 0.9, lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
         """Performs linear regression using Plain Gradient Descent with momentum
 
         args:
@@ -478,8 +480,7 @@ class GD():
 
         return beta
 
-
-    def SGD(self,eta =0.001, M = 50, n_epochs = 5, lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+    def SGD(self,eta =0.0001, M = 5, n_epochs = 15, lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
         """Performs linear regression using Stochastic Gradient Descent
                     using tunable learning rate. (see function *learning rate*)
 
@@ -894,13 +895,17 @@ if __name__ == "__main__":
     ols_beta2 = inst.MGD()
     ols_beta3 = inst.SGD()
     ols_beta4 = inst.SMGD()
+    
 
     ridge_beta1 = inst.PlainGD(method="Ridge")
     ridge_beta2 = inst.MGD(method="Ridge")
     ridge_beta3 = inst.SGD(method="Ridge")
     ridge_beta4 = inst.SMGD(method="Ridge")
 
+
+
 #OLS
+    
     model1_ols = designmatrix @ ols_beta1
     mse1_ols = inst.MSE(ydata, model1_ols)
 
@@ -926,32 +931,83 @@ if __name__ == "__main__":
     model4_ridge = designmatrix @ ridge_beta4
     mse4_ridge = inst.MSE(ydata,model4_ridge)
     lrates = [""]
-    print(f"MSE : {mse3_ridge}")
 
-    # eta = [1,0.1,0.01,0.001,0.0001] 
-    # ols_mse_adagrad = [17.16,17.38,19.60,44.03,323.29]
-    # plt.plot()
-    # plt.show()
+    
+    
+    #Heatmap for mse, lmbda and eta
+    lmbdaa = np.array((0.2,0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+    etaa = np.array((0.2,0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+    mse_1 = np.zeros((len(lmbdaa), len(etaa)))
+    for i, lmbda_ in enumerate(lmbdaa):      
+        for j, etaaa in enumerate(etaa):
+            beta = inst.PlainGD(eta =etaaa,lmbda=lmbda_,method="Ridge")
+            mse_1[i][j] = inst.MSE(ydata,designmatrix@beta)
+    
+    
+    breakpoint()
+    plt.plot(x,model1_ols,label="ydata and noise")
+    plt.scatter(etaa,mse_1[j], label="MSE_eta")
+    plt.scatter(lmbdaa,mse_1[i], label="MSE_lmbda")
+    plt.legend()
+    plt.show()
+    
+    #Heatmap for mse, minibatches and epochs
+    epochs = np.array((50,25,20,15,10,9,8,7,6,5))
+    minibatches = np.array((50,25,20,15,10,9,8,7,6,5))
+    mse_2 = np.zeros((len(epochs), len(minibatches)))
+    for i, epoch in enumerate(epochs):
+        for j, batch_size in enumerate(minibatches):
+            beta= inst.SGD(M=batch_size,n_epochs=epoch,method="Ridge")
+            mse_2[i][j] = inst.MSE(ydata,designmatrix@beta)
+    #Creating dataframe
+    df1 = pd.DataFrame(data=mse_1[:,:],
+                                index = lmbdaa,
+                                columns = etaa)
+    df2= pd.DataFrame(data=mse_2[:,:],
+                                index = epochs,
+                                columns = minibatches)
+    breakpoint()
+    print(df1)
+    minvalue_1 = np.min(mse_1)
+    maxvalue_1 = np.max(mse_1) 
+    minvalue_2 = np.min(mse_2) 
+    maxvalue_2 = np.max(mse_2)  
+    
+    print("___MAX__MIN___lmbda__eta____")
+    print(f"Minimum MSE: {np.min(mse_1)}")
+    print(f"Maximum MSE: {np.max(mse_1)}")
+    print("___MAX__MIN___epchs__minibatches____")
+    print(f"Minimum MSE: {np.min(mse_2)}")
+    print(f"Maximum MSE: {np.max(mse_2)}")
 
-    #Plotting
-    # plt.plot(x,ydata,label = "ydata with noise",linestyle ='*',color='m')
-    # plt.plot(x,model1_ols, label = "Plain GD")
-    # plt.plot(x,model3_ols,label ="Stochastic GD")
-    # plt.plot(x,model4_ols,label="Stochastic GD with momentum")
+    
+    
+    
+    #Plotting heatmap for Optimal lambda and eta
+    sns.heatmap(df1.div(maxvalue_1),annot=True,fmt='.2g')
+    plt.title("Optimal hyperparamteres $\lambda$ and $\eta$")
+    plt.xlabel("Ridge parameter, $\lambda$")
+    plt.ylabel("Learningrate, $\eta$")
+    plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_lmbda_eta.pdf")
+    plt.show()
+    
+    #Plotting heatmap for Optimal Minibatches and epochs
+    sns.heatmap(df2.div(maxvalue_2),annot=True,fmt='.2g')
+    plt.title("Optimal hyperparamteres $M$ and $epochs$")
+    plt.xlabel("Epochs")
+    plt.ylabel("Minibatches, $M$")
+    plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_epochs_minibatches.pdf")
+    plt.show()
 
-    # plt.legend(loc="lower right",prop={'size': 8})
-    # plt.show()
+    #Plotting ydata,polyfunction + noise against x, np.linspace.
+    plt.plot(x,ydata,label = "ydata with noise",color='darkcyan')
+    plt.title("Polynomial function with added noise")
+    plt.xlabel("x")
+    plt.ylabel("p(x)")
+    plt.legend(loc="lower right",prop={'size': 8})
+    plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/ydata_and_noise.pdf")
+    plt.show()
 
 
 
 
-
-
-
-# # Load the example flights dataset and convert to long-form
-# flights_long = sns.load_dataset("flights")
-# flights = flights_long.pivot("month", "year", "passengers")
-
-# # Draw a heatmap with the numeric values in each cell
-# f, ax = plt.subplots(figsize=(9, 6))
-# sns.heatmap(flights, annot=True, fmt="d", linewidths=.5, ax=ax)

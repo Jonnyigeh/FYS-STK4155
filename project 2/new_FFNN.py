@@ -8,14 +8,25 @@ from sys import exit
 
 np.random.seed(0)
 class Layer():
+    """ Classobject that will construct a single layer of a Neural Network. This will save
+    various parameters such as gradients, biases, weights etc. that belong in each layer.
+
+    args:
+        dimension_in            (int): Left side dimension of the weights matrix
+        dimension_out           (int): Right side dimension of the weights matrix and the width of the bias vector
+        act_func                (string): Specifies which activation function to be used in the layer (sigmoid, relu or linear)
+        input_layer             (bool): True if the layer is an input layer
+        output_layer            (bool): True if the layer is an output layer
+
+    """
     def __init__(
             self,
             dimension_in,
             dimension_out,
-            act_func="sigmoid",
+            act_func="relu",
             input_layer=False,
             output_layer=False,
-            output_dimension="Not defined"):
+            output_dimension=1):
 
         self.dimension_in = dimension_in
         self.dimension_out = dimension_out
@@ -23,14 +34,10 @@ class Layer():
         self.output_layer = output_layer
         if output_layer:
             self.act_func="linear"
-            self.dimension_out = 1
-        #     try:
-        #         self.dimension_out = float(output_dimension)
-        #     except ValueError:
-        #         print("Please specify output dimension")
+            self.dimension_out = output_dimension
 
-        if input_layer:
-            self.weights = np.ones((self.dimension_in, self.dimension_out))
+        if input_layer:             # Input layer does not change the input, just changes the dimensionality.
+            self.weights = np.eye(self.dimension_in, self.dimension_out)
             self.bias = np.zeros((1, self.dimension_out))
         else:
             self.weights = np.random.randn(self.dimension_in, self.dimension_out)
@@ -49,6 +56,7 @@ class Layer():
             self.grad_b = np.sum(error_prev_layer, axis=0)
             if lmbda > 0.0:
                 self.grad_w += lmbda * self.weights
+
             self.error_layer = error_prev_layer @ self.weights.T * self.grad_activation_function(self.output)
 
             return self.error_layer
@@ -58,6 +66,11 @@ class Layer():
             self.grad_b = np.sum(self.error_layer, axis=0)
         if lmbda > 0.0:
             self.grad_w += lmbda * self.weights
+
+        # To avoid exploding gradients, we do gradient clipping
+        # by removing a factor of 10 when the gradient exceed some threshold
+        self.grad_w = np.where(self.grad_w > 10, 0.1 * self.grad_w, self.grad_w)
+        self.grad_b[self.grad_b>10] = 0.1
 
         return self.error_layer
 
@@ -79,13 +92,7 @@ class Layer():
             return np.ones_like(x)
 
         if self.act_func=="relu":
-            return np.where(x>0, 1, 0.01 * x) # Leak ReLu
-
-        # if activation_function="relu":
-        #     if x <= 0:
-        #         return 0
-        #     else:
-        #         return 1
+            return np.where(x>0, 1, 0.01 * x) # Leaky ReLu
 
 
 class NeuralNetwork():
@@ -124,7 +131,7 @@ class NeuralNetwork():
             also adds an input layer with dimensions (n_features, n_neurons)
                 plus an output layer with dimensions (n_neurons, n_outputs)
         """
-        input_layer = Layer(self.n_features, self.n_hidden_neurons)
+        input_layer = Layer(self.n_features, self.n_hidden_neurons, input_layer=True)
         self.layers.append(input_layer)
         for l in range(self.n_hidden_layers):
             self.layers.append(Layer(self.n_hidden_neurons, self.n_hidden_neurons))
@@ -144,8 +151,6 @@ class NeuralNetwork():
         # And through output layer
         output_layer = self.layers[-1]
         self.actual_output = output_layer.forward_prop(output_prev)
-
-
 
 
     def feed_forward_out(self, X, Y):
@@ -169,13 +174,22 @@ class NeuralNetwork():
     def backpropagation(self):
         output_error = (self.actual_output - self.Y_data) / self.Y_data.size
         output_layer = self.layers[-1]
-
+        breakpoint()
         error_prev = output_layer.backward_prop(output_error, self.lmbd)
+        # if np.any(np.abs(error_prev) > 100):
+        #     print("Wow thats really wrong")
+        #     breakpoint()
         # Now backpropagate through all the hidden layers
         for l in range(self.n_hidden_layers)[::-1]:
+<<<<<<< HEAD
             if np.any(np.isnan(error_prev)):
                 print("Gradient is fucked")
                 
+=======
+            # if np.any(np.isinf(error_prev)):
+            #     print("Gradient is fucked")
+            #     breakpoint()
+>>>>>>> 38a504ff08ce0a323f81019252e22492530651e2
             hidden_layer = self.layers[l+1]
             error_hidden = hidden_layer.backward_prop(error_prev, self.lmbd)
             error_prev = error_hidden
@@ -188,9 +202,16 @@ class NeuralNetwork():
             hidden_layer.weights -= self.eta * hidden_layer.grad_w
             hidden_layer.bias -= self.eta * hidden_layer.grad_b
 
+<<<<<<< HEAD
             if np.any(np.isnan(hidden_layer.weights)):
                 print("weights are fucked")
          
+=======
+            # if np.any(np.isnan(hidden_layer.weights)):
+            #     print("weights are fucked")
+            #     breakpoint()
+
+>>>>>>> 38a504ff08ce0a323f81019252e22492530651e2
 
         output_layer.weights -= self.eta * output_layer.grad_w
         output_layer.bias -= self.eta * output_layer.grad_b
@@ -205,7 +226,7 @@ class NeuralNetwork():
                 chosen_datapoints = np.random.choice(
                     data_indices, size=self.batch_size, replace=False
                 )
-                # print("training...")
+
                 # minibatch training data
                 self.X_data = self.X_data_full[chosen_datapoints]
                 self.Y_data = self.Y_data_full[chosen_datapoints]
@@ -231,7 +252,7 @@ class NeuralNetwork():
 
 if __name__  == "__main__":
     # Run this to perform regression (hopefully)
-    n_datapoints = 1000
+    n_datapoints = 100
     f = lambda x:  8 + 2 * x + 4 * x ** 2
     x = np.linspace(0,1,n_datapoints)
     y = f(x) + 0.5 * np.random.randn(len(x))
@@ -241,7 +262,7 @@ if __name__  == "__main__":
     for i in range(1, deg_fit+1):
         X[:,i] = x ** i
     X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.3)
-    dnn = NeuralNetwork(X_train,Y_train,eta=0.001,lmbd=0.1,epochs=50,n_hidden_neurons=10)
+    dnn = NeuralNetwork(X_train,Y_train,batch_size=10,eta=0.001,lmbd=0.001,epochs=50,n_hidden_neurons=25)
     dnn.train()
     pred_test, error_est_test = dnn.predict(X_test,Y_test)
     pred_train, error_est_train = dnn.predict(X_train, Y_train)
