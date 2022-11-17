@@ -14,7 +14,7 @@ class log_regressor():
     def __init__(self,
             X_data,
             y_data,
-            batch_size=10,
+            batch_size=50,
             epochs=50,
             eta=0.3,
             lmbda=0.1):
@@ -86,11 +86,12 @@ class log_regressor():
             self.errors.append(self.cost_func(self.sigmoid(self.X @ self.w + self.b)))
 
 if __name__ == "__main__":
+    # This code will produce the heat map shown in result section (Logistic Regressino: Classification)
     data, target = datasets.load_breast_cancer(return_X_y=True)
     train_data, test_data, train_target, test_target = train_test_split(data, target, test_size=0.2)
 
-    eta_vals = np.logspace(-3, 0, 10)
-    lmbd_vals = np.logspace(-3, 0, 10)
+    eta_vals = np.logspace(-6, 0, 7)
+    lmbd_vals = np.logspace(-6, 0, 7)
     train_accuracy = np.zeros((len(eta_vals), len(lmbd_vals)))
     test_accuracy = np.zeros((len(eta_vals), len(lmbd_vals)))
     for i, eta in enumerate(eta_vals):
@@ -107,10 +108,18 @@ if __name__ == "__main__":
         # print("Accuracy score on training data " + str(accuracy_score(yt_train, train_target.reshape(yt_train.shape))))
         # print("Accuracy score on test data: " + str(accuracy_score(ytilde, test_target.reshape(ytilde.shape))))
         # print("\n")
-    fig, axs = plt.subplots(2, figsize=(10,10))
-    sns.heatmap(test_accuracy, annot=True, ax=axs[0], cmap="viridis")
-    sns.heatmap(train_accuracy, annot=True, ax=axs[1], cmap="viridis")
-    axs[0].set_title("Test")
-    axs[1].set_title("Train")
-    plt.show()
-    breakpoint()
+    fig, axs = plt.subplots(2, figsize=(8,8))
+    sns.heatmap(test_accuracy, annot=True, ax=axs[0], fmt=".2f",
+                            xticklabels=eta_vals, yticklabels=lmbd_vals)
+    sns.heatmap(train_accuracy, annot=True, ax=axs[1], fmt=".2f",
+                            xticklabels=eta_vals, yticklabels=lmbd_vals)
+    fig.suptitle("Logistic regression using SGD")
+    axs[0].set_title("Test data")
+    axs[0].set_xlabel(r"Regularizaton parameter: $\lambda$")
+    axs[0].set_ylabel(r"Learning rate: $\eta$")
+    axs[1].set_title("Train data")
+    axs[1].set_xlabel(r"Regularizaton parameter: $\lambda$")
+    axs[1].set_ylabel(r"Learning rate: $\eta$")
+    fig.tight_layout()
+    # plt.savefig("log_reg_50epoch_bs50_heatmap.pdf")
+    # plt.show()
