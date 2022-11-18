@@ -1,0 +1,7 @@
+\documentclass[../main.tex]{subfiles}
+
+\begin{document}
+\begin{abstract}
+In this report we've studied various methods for linear regression of a 2D surface, namely Ordinary least squares (OLS) , Ridge Regression and LASSO. We've built these model using the Franke Function to produce terrain data with added noise, and analyze each method by its error estimates using MSE, Variance and Bias. We ran these tests using $N=50$ datapoints in the range $[0,1]$, with the seed $=2001$ (for the random module in python) and applied train test splitting of our dataset - and we also scaled our data using \emph{mean normalization}. Furthermore, we also studied how two different resampling methods, Bootstrap and Cross validation, affected our error estimates. Out of the two, Cross validation for $k\geq10$ produced similar, or better results than bootstrap. We found that, out of the three linear regression methods, LASSO regression produced the smallest MSE when evaluated on the Franke Function. \\\indent When fitting a 5th order polynomial to real terrain data of Stavanger, we found the same: Lasso regression produces the smallest MSE - however, the MSE score found for LASSO was $52000$, an incredibly large number - indicating that the $5$th order polynomial fit was a failure to model our terrain data. 
+\end{abstract}
+\end{document}
