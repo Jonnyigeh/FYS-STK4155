@@ -97,8 +97,6 @@ class GD():
         return r2
 
     def PlainGD(self, eta = 0.01, eps = 10 ** (-8), lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
-
-
         """Performs linear regression using Plain Gradient Descent
 
         args:
@@ -140,10 +138,10 @@ class GD():
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
                     s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                    m = m / (1 - avg_time1 ** i)
-                    s = s / (1 - avg_time2 ** i)
+                    mhat = m / (1 - avg_time1 ** i)
+                    shat = s / (1 - avg_time2 ** i)
 
-                    beta -= eta * m / (np.sqrt(s) + delta)
+                    beta -= eta * mhat / (np.sqrt(shat) + delta)
                     m_prev = m
                     s_prev = s
             elif ADAGRAD:
@@ -154,7 +152,7 @@ class GD():
                 dim1, dim2 = np.shape(G)
                 I = np.eye(dim1, dim2)
 
-                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape) * gradC[0]
                 mse = []
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 1000:
@@ -166,7 +164,7 @@ class GD():
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
 
-                    beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
+                    beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
             elif RMSprop:
                 avg_time = 0.9
                 delta = 1e-8
@@ -196,9 +194,9 @@ class GD():
                     i += 1
                     gradC = 2 / n * (DM.T @ (DM @ beta - y))
                     beta -= eta * gradC
-                
-                
-                
+
+
+
             # ref_beta = np.linalg.pinv(DM.T @ DM) @ DM.T @ y
 
         if method=="Ridge":
@@ -225,10 +223,10 @@ class GD():
                     g = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
                     s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                    m = m / (1 - avg_time1 ** i)
-                    s = s / (1 - avg_time2 ** i)
+                    mhat = m / (1 - avg_time1 ** i)
+                    shat = s / (1 - avg_time2 ** i)
 
-                    beta -= eta * m / (np.sqrt(s) + delta)
+                    beta -= eta * mhat / (np.sqrt(shat) + delta)
                     m_prev = m
                     s_prev = s
 
@@ -239,7 +237,7 @@ class GD():
                 G = gradC[0]@gradC[0].T
                 dim1, dim2 = np.shape(G)
                 I = np.eye(dim1, dim2)
-                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape) * gradC[0]
                 mse = []
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 1000:
@@ -250,7 +248,7 @@ class GD():
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
+                    beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
 
             elif RMSprop:
                 avg_time = 0.9
@@ -293,7 +291,7 @@ class GD():
             np.testing.assert_allclose(beta, ref_beta, rtol=1e-3, atol=1e-3)
 
         return beta,mse
-   
+
     def MGD(self, eta = 0.01, eps = 10 ** (-8), gamma = 0.9, lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
 
         """Performs linear regression using Plain Gradient Descent with momentum
@@ -339,8 +337,8 @@ class GD():
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
                     s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                    m = m / (1 - avg_time1 ** i)
-                    s = s / (1 - avg_time2 ** i)
+                    mhat = m / (1 - avg_time1 ** i)
+                    shat = s / (1 - avg_time2 ** i)
                     v = v_prev * gamma + eta * m / (np.sqrt(s) + delta)
                     beta -= v
                     v_prev = v
@@ -356,7 +354,7 @@ class GD():
                 G = gradC[0]@gradC[0].T
                 dim1, dim2 = np.shape(G)
                 I = np.eye(dim1, dim2)
-                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape) * gradC[0]
                 mse = []
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 100:
@@ -367,7 +365,7 @@ class GD():
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    v = gamma * v_prev + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
+                    v = gamma * v_prev + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
                     beta -= v
                     v_prev = v
 
@@ -401,16 +399,16 @@ class GD():
                 mse = []
                 i = 0
                 while np.linalg.norm(gradC) > eps and i < 100:
-                    mse.append(self.MSE(self.y,self.DM@beta))    
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     i += 1
                     gradC = 2 / n * (DM.T @ (DM @ beta - y))
                     v = v_prev * gamma + eta * gradC
                     beta -= v
                     v_prev = v
                 print(f"MSE momentum: {mse}")
-                
+
             ref_beta = np.linalg.pinv(DM.T @ DM) @ DM.T @ y
-            
+
 
         if method=="Ridge":
             if ADAM:
@@ -435,9 +433,9 @@ class GD():
                     g = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
                     s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                    m = m / (1 - avg_time1 ** i)
-                    s = s / (1 - avg_time2 ** i)
-                    v = gamma * v_prev + eta * m / (np.sqrt(s) + delta)
+                    mhat = m / (1 - avg_time1 ** i)
+                    shat = s / (1 - avg_time2 ** i)
+                    v = gamma * v_prev + eta * mhat / (np.sqrt(shat) + delta)
                     beta -= v
                     m_prev = m
                     s_prev = s
@@ -451,7 +449,7 @@ class GD():
                 v_prev = 0
                 dim1, dim2 = np.shape(G)
                 I = np.eye(dim1, dim2)
-                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape) * gradC[0]
                 mse = []
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 100:
@@ -462,7 +460,7 @@ class GD():
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    v = gamma * v_prev + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
+                    v = gamma * v_prev + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
                     beta -= v
                     v_prev = v
 
@@ -517,7 +515,7 @@ class GD():
 
 
         return beta,mse
-    
+
     def SGD(self,eta =0.01, M = 10, n_epochs = 100, lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
 
         """Performs linear regression using Stochastic Gradient Descent
@@ -571,15 +569,15 @@ class GD():
                         g = 2 / M * (DMi.T @ (DMi @ beta - yi))
                         m = avg_time1 * m_prev + (1 - avg_time1) * g
                         s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                        m = m / (1 - avg_time1 ** t)
-                        s = s / (1 - avg_time2 ** t)
+                        mhat = m / (1 - avg_time1 ** t)
+                        shat = s / (1 - avg_time2 ** t)
 
-                        beta -= eta * m / (np.sqrt(s) + delta)
+                        beta -= eta * mhat / (np.sqrt(shat) + delta)
                         m_prev = m
                         s_prev = s
 
 
-            elif ADAGRAD: 
+            elif ADAGRAD:
                 gradC = []
                 delta = 1e-8
                 mse= []
@@ -597,7 +595,7 @@ class GD():
                         G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
+                        beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
 
 
             elif RMSprop:
@@ -662,10 +660,10 @@ class GD():
                         g = 2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta
                         m = avg_time1 * m_prev + (1 - avg_time1) * g
                         s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                        m = m / (1 - avg_time1 ** t)
-                        s = s / (1 - avg_time2 ** t)
+                        mhat = m / (1 - avg_time1 ** t)
+                        shat = s / (1 - avg_time2 ** t)
 
-                        beta -= eta * m / (np.sqrt(s) + delta)
+                        beta -= eta * mhat / (np.sqrt(shat) + delta)
                         m_prev = m
                         s_prev = s
 
@@ -687,7 +685,7 @@ class GD():
                         G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
+                        beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
                         mse.append(self.MSE(self.y,self.DM@beta))
 
             elif RMSprop:
@@ -725,9 +723,9 @@ class GD():
                         I = np.eye(dim1, dim2)
                         gradC = 2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta
                         beta -= eta * gradC
-                        
-                
-                
+
+
+
             if check_equality:
                 # XT_X = DM.T @ DM
                 # ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
@@ -791,10 +789,10 @@ class GD():
                         g = 2 / M * (DMi.T @ (DMi @ beta - yi))
                         m = avg_time1 * m_prev + (1 - avg_time1) * g
                         s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                        m = m / (1 - avg_time1 ** t)
-                        s = s / (1 - avg_time2 ** t)
+                        mhat = m / (1 - avg_time1 ** t)
+                        shat = s / (1 - avg_time2 ** t)
 
-                        v = v_prev * gamma + eta * m / (np.sqrt(s) + delta)
+                        v = v_prev * gamma + eta * mhat / (np.sqrt(shat) + delta)
                         beta -= v
                         m_prev = m
                         s_prev = s
@@ -819,7 +817,7 @@ class GD():
                         G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        v = v_prev * gamma + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
+                        v = v_prev * gamma + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
                         beta -= v
 
 
@@ -894,9 +892,9 @@ class GD():
                         g = 2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta
                         m = avg_time1 * m_prev + (1 - avg_time1) * g
                         s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                        m = m / (1 - avg_time1 ** t)
-                        s = s / (1 - avg_time2 ** t)
-                        v = v_prev * gamma + eta * m / (np.sqrt(s) + delta)
+                        mhat = m / (1 - avg_time1 ** t)
+                        shat = s / (1 - avg_time2 ** t)
+                        v = v_prev * gamma + eta * mhat / (np.sqrt(shat) + delta)
                         beta -= v
                         m_prev = m
                         s_prev = s
@@ -920,7 +918,7 @@ class GD():
                         G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        v = v_prev * gamma + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
+                        v = v_prev * gamma + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
                         beta -= v
                         v_prev = v
                         mse.append(self.MSE(self.y,self.DM@beta))
@@ -1001,13 +999,13 @@ if False:   # RIDGE models
     model3_RIDGE = designmatrix @ ridge_beta3
     mse3_ols = inst.MSE(ydata,model3_ols)
     model4_RIDGE = designmatrix @ ridge_beta4
-    mse4_ols = inst.MSE(ydata,model4_ols)  
+    mse4_ols = inst.MSE(ydata,model4_ols)
 if True: # This code prints out all MSE for various eta values for different lmbda values ranging from [1E-1 - 1E-6]
     lmbdaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
     mse_1 = np.zeros(len(lmbdaa))
-    
+
     for i, lmbda_ in enumerate(lmbdaa):
-        beta = inst.PlainGD(eta=0.01,lmbda=lmbda_)  
+        beta = inst.PlainGD(eta=0.01,lmbda=lmbda_)
         mse_1[i] = inst.MSE(ydata,designmatrix@beta)
 
     print(f"MSE data for constant eta= 0.001: {mse_1}")
@@ -1018,21 +1016,21 @@ if False:# This code prints out all MSE for various lmbda values for different e
             beta = inst.PlainGD(eta =etaaa,lmbda=6.0,method="Ridge")
             mse_2[i] = inst.MSE(ydata,designmatrix@beta)
         print(mse_2)
-    
+
 if False: #Heatmap for mse, lmbda and eta
     lmbdaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
     etaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
     mse_1 = np.zeros((len(lmbdaa), len(etaa)))
-    for i, lmbda_ in enumerate(lmbdaa):      
+    for i, lmbda_ in enumerate(lmbdaa):
         for j, etaaa in enumerate(etaa):
             beta = inst.PlainGD(eta =etaaa,lmbda=lmbda_,method="Ridge")
             mse_1[i][j] = inst.MSE(ydata,designmatrix@beta)
-    maxvalue_1 = np.max(mse_1) 
+    maxvalue_1 = np.max(mse_1)
     #Creating dataframe
     df1 = pd.DataFrame(data=mse_1[:,:],
                         index= lmbdaa,
                          columns= etaa)
-    
+
     #Plotting heatmap for Optimal lambda and eta
     sns.heatmap(df1.div(maxvalue_1),annot=True,fmt='.2g')
     plt.title("Optimal hyperparamteres $\lambda$ and $\eta$")
@@ -1049,11 +1047,11 @@ if False: #Heatmap for mse, minibatches and epochs
         for j, batch_size in enumerate(minibatches):
             beta= inst.SGD(M=batch_size,n_epochs=epoch,method="Ridge")
             mse_2[i][j]= inst.MSE(ydata,designmatrix@ridge_beta1)
-            
+
     df2= pd.DataFrame(data=mse_2[:,:],
                         index = epochs,
                         columns = minibatches)
-    maxvalue_2 = np.max(mse_2)  
+    maxvalue_2 = np.max(mse_2)
     #Plotting heatmap for Optimal Minibatches and epochs
     sns.heatmap(df2.div(maxvalue_2),annot=True,fmt='.2g')
     plt.title("Optimal hyperparamteres $M$ and $epochs$")
