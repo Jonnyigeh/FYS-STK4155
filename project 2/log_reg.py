@@ -154,4 +154,4 @@ if __name__ == "__main__":
     axs[1].set_ylabel(r"Learning rate: $\eta$")
     fig.tight_layout()
     # plt.savefig("log_reg_50epoch_bs50_heatmap.pdf")
-    # plt.show()
+    plt.show()
