@@ -31,45 +31,6 @@ class log_regressor():
             eta=0.3,
             lmbda=0.1):
 
-<<<<<<< HEAD
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-def cost_func(y, ytilde):
-    loss = -np.mean(y * (np.log(ytilde)) - (1 - y) * np.log(1 - ytilde))
-    return los
-def grad_cf(X, y, ytilde):
-    m = X.shape[0]
-    gradW = - 1 / m * X.T @ (ytilde - y)
-    gradb = 1 / m * np.sum((ytilde - y))
-    return gradW, gradb
-
-def train(X, y, M, n_epochs, eta):
-    m, n = X.shape
-    b = 0
-    w = np.zeros((n,1))
-    errors = []
-    n_iterations = n // M
-    data_indices = np.arange(n)
-    for epoch in range(n_epochs):
-        for j in range(n_iterations):
-            # pick datapoints with replacement
-            chosen_datapoints = np.random.choice(
-                data_indices, size=M, replace=False
-            )
-
-            # minibatch training data
-            X_k = X[chosen_datapoints]
-            y_k = y[chosen_datapoints]
-
-            ytilde = sigmoid(X_k @ w + b)
-            dw, db = grad_cf(X_k, y_k, ytilde)
-            w -= eta * dw
-            b -= eta * db
-        errors.append(cost_func(y, sigmoid(X @ w + b)))
-
-    return w, b, errors
-=======
         self.n, self.n_features = X_data.shape
         self.b = 0
         self.X = X_data
@@ -155,7 +116,6 @@ def train(X, y, M, n_epochs, eta):
 
             ytilde = self.sigmoid(self.X @ self.w + self.b)
             self.errors.append(self.cost_func(self.sigmoid(self.X @ self.w + self.b)))
->>>>>>> 3e6dcaefc03588ca4d44169d318dcebda49f7b12
 
 if __name__ == "__main__":
     # This code will produce the heat map shown in result section (Logistic Regressino: Classification)
@@ -194,4 +154,4 @@ if __name__ == "__main__":
     axs[1].set_ylabel(r"Learning rate: $\eta$")
     fig.tight_layout()
     # plt.savefig("log_reg_50epoch_bs50_heatmap.pdf")
-    # plt.show()
+    plt.show()
