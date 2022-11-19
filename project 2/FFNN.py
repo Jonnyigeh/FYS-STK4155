@@ -70,6 +70,9 @@ class NeuralNetwork():
         """Initializes the network with all hidden layers with dimensions (n_neurons,n_neurons)
             also adds an input layer with dimensions (n_features, n_neurons)
                 plus an output layer with dimensions (n_neurons, n_outputs)
+
+            Depending on what the networks functionality is, chooses the appropriate activation function
+                for the output layer.
         """
         input_layer = Layer(self.n_features, self.n_hidden_neurons, input_layer=True, act_func=self.hidden_act_func)
         self.layers.append(input_layer)
@@ -125,6 +128,7 @@ class NeuralNetwork():
         # And through output layer
         output_layer = self.layers[-1]
         output = output_layer.forward_prop(output_prev)
+        # Now finding error estimates for either classifier or regression
         if self.classifier:
             # Hard classifier
             output[output<0.5] = 0
@@ -171,7 +175,7 @@ class NeuralNetwork():
         error_input = input_layer.backward_prop(error_prev, self.lmbd, weights_prev_layer=weights_prev_layer)
 
         # Now we have all the gradients evaluated in each Layer class instance
-        # Lets optimize using our GD method of choice (plain gd in this case)
+        # Lets optimize using our GD method of choice (SGD in this case)
         input_layer = self.layers[0]
         input_layer.weights -= self.eta * input_layer.grad_w
         input_layer.bias -= self.eta * input_layer.grad_b
@@ -190,12 +194,11 @@ class NeuralNetwork():
                 Has functionality to visualize the MSE of the network for every epoch
                     to show how the network is training properly.
         """
-        data_indices = np.arange(self.n_inputs)
+        data_indices = np.arange(self.n_inputs)         # Finds the indexes available from our dataset
 
         for i in range(self.epochs):
-            # print(f"Training... epoch number: {i}")
             for j in range(self.iterations+1):
-                # pick datapoints with replacement
+                # pick datapoints with replacement randomly
                 chosen_datapoints = np.random.choice(
                     data_indices, size=self.batch_size, replace=False
                 )
