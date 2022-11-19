@@ -217,8 +217,8 @@ class GD():
                 j = 0
 
                 while np.linalg.norm(g) > eps and j < 1000:
-                    mse.append(self.MSE(self.y,self.DM@beta))
                     j += 1
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
@@ -241,8 +241,8 @@ class GD():
                 mse = []
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 1000:
-                    mse.append(self.MSE(self.y,self.DM@beta))
                     i += 1
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     gradC.append(2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta)
                     k = len(gradC)
                     G = sum(gradC[i]@gradC[i].T for i in range(k))
@@ -260,8 +260,8 @@ class GD():
                 mse = []
                 i = 0
                 while np.linalg.norm(g) > eps and i < 100:
-                    mse.append(self.MSE(self.y,self.DM@beta))
                     i += 1
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     g = 2 / n * (DM.T @ (DM @ beta0 - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     beta -= eta * g / np.sqrt(s + delta)
@@ -280,8 +280,8 @@ class GD():
                 i = 0
                 while i < 1000:
                 #while np.linalg.norm(gradC) > eps and i < 1000:
-                    mse.append(self.MSE(self.y,self.DM@beta))
                     i += 1
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     gradC = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     beta -= eta * gradC
 
@@ -985,7 +985,7 @@ if __name__ == "__main__":
 
 
 
-if True:    # RIDGE values
+if False:    # RIDGE values
 
     ridge_beta1,mse_PlainGD        = inst.PlainGD(method="Ridge")
     ridge_beta2,mse_MGD            = inst.MGD(method="Ridge")
@@ -1000,62 +1000,44 @@ if False:   # RIDGE models
     mse3_ols = inst.MSE(ydata,model3_ols)
     model4_RIDGE = designmatrix @ ridge_beta4
     mse4_ols = inst.MSE(ydata,model4_ols)
-if True: # This code prints out all MSE for various eta values for different lmbda values ranging from [1E-1 - 1E-6]
+if False: # This code prints out all MSE for various eta values for different lmbda values ranging from [1E-1 - 1E-6]
     lmbdaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
     mse_1 = np.zeros(len(lmbdaa))
-
     for i, lmbda_ in enumerate(lmbdaa):
-        beta = inst.PlainGD(eta=0.01,lmbda=lmbda_)
+        beta, mse= inst.PlainGD(eta=0.1,lmbda=lmbda_, method="Ridge")
         mse_1[i] = inst.MSE(ydata,designmatrix@beta)
 
-    print(f"MSE data for constant eta= 0.001: {mse_1}")
+    print(f"MSE of different lambda values[eta=0.01]: {mse_1}")
+
+
+
+
 if False:# This code prints out all MSE for various lmbda values for different eta values ranging from [1E-1 - 1E-6]
         etaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
         mse_2 = np.zeros(len(etaa))
         for i, etaaa in enumerate(etaa):
-            beta = inst.PlainGD(eta =etaaa,lmbda=6.0,method="Ridge")
+            beta,mse = inst.PlainGD(eta =etaaa,lmbda=0.1,method="Ridge")
             mse_2[i] = inst.MSE(ydata,designmatrix@beta)
-        print(mse_2)
+        print(f"MSE of different eta values[lmbda=0.01]: {mse_2}")
 
-if False: #Heatmap for mse, lmbda and eta
+if True: #Heatmap for mse, lmbda and eta
     lmbdaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
     etaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
     mse_1 = np.zeros((len(lmbdaa), len(etaa)))
     for i, lmbda_ in enumerate(lmbdaa):
         for j, etaaa in enumerate(etaa):
-            beta = inst.PlainGD(eta =etaaa,lmbda=lmbda_,method="Ridge")
+            beta,mse = inst.PlainGD(eta =etaaa,lmbda=lmbda_,method="Ridge")
             mse_1[i][j] = inst.MSE(ydata,designmatrix@beta)
     maxvalue_1 = np.max(mse_1)
     #Creating dataframe
     df1 = pd.DataFrame(data=mse_1[:,:],
-                        index= lmbdaa,
-                         columns= etaa)
+                        index= etaa,
+                         columns= lmbdaa)
 
     #Plotting heatmap for Optimal lambda and eta
-    sns.heatmap(df1.div(maxvalue_1),annot=True,fmt='.2g')
+    sns.heatmap(df1,annot=True,fmt='.2g')
     plt.title("Optimal hyperparamteres $\lambda$ and $\eta$")
-    plt.xlabel("Ridge parameter, $\lambda$")
-    plt.ylabel("Learningrate, $\eta$")
-    #plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_lmbda_eta.pdf")
-    plt.show()
-
-if False: #Heatmap for mse, minibatches and epochs
-    epochs = np.array((50,25,20,15,10,9,8,7,6,5))
-    minibatches = np.array((50,25,20,15,10,9,8,7,6,5))
-    mse_2 = np.zeros((len(epochs), len(minibatches)))
-    for i, epoch in enumerate(epochs):
-        for j, batch_size in enumerate(minibatches):
-            beta= inst.SGD(M=batch_size,n_epochs=epoch,method="Ridge")
-            mse_2[i][j]= inst.MSE(ydata,designmatrix@ridge_beta1)
-
-    df2= pd.DataFrame(data=mse_2[:,:],
-                        index = epochs,
-                        columns = minibatches)
-    maxvalue_2 = np.max(mse_2)
-    #Plotting heatmap for Optimal Minibatches and epochs
-    sns.heatmap(df2.div(maxvalue_2),annot=True,fmt='.2g')
-    plt.title("Optimal hyperparamteres $M$ and $epochs$")
-    plt.xlabel("Epochs")
-    plt.ylabel("Minibatches, $M$")
-    plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_epochs_minibatches.pdf")
+    plt.xlabel("Learning rate $\eta$")
+    plt.ylabel("Ridge parameter $\lambda$")
+    plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_lmbda_eta.pdf")
     plt.show()
