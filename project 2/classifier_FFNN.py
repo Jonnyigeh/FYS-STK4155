@@ -2,16 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from autograd import grad
+
 from Layer import Layer
 from FFNN import NeuralNetwork
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
 from sklearn import datasets
-from sys import exit
-import warnings
-warnings.filterwarnings("ignore", category=RuntimeWarning)
+
 
 if __name__ == "__main__":
     data, target = datasets.load_breast_cancer(return_X_y=True)
@@ -42,9 +40,9 @@ if __name__ == "__main__":
                 test_accuracy[i][j] = errors["test"]
         fig, axs = plt.subplots(2, figsize=(8,8))
         sns.heatmap(test_accuracy, annot=True, ax=axs[0], fmt=".2f",
-                                xticklabels=eta_vals, yticklabels=lmbd_vals)
+                                xticklabels=lmbd_vals, yticklabels=eta_vals)
         sns.heatmap(train_accuracy, annot=True, ax=axs[1], fmt=".2f",
-                                xticklabels=eta_vals, yticklabels=lmbd_vals)
+                                xticklabels=lmbd_vals, yticklabels=eta_vals)
         fig.suptitle("Network with 10 neurons and 2 hidden layers using Sigmoid")
         axs[0].set_title("Test data")
         axs[0].set_xlabel(r"Regularizaton parameter: $\lambda$")
@@ -53,7 +51,7 @@ if __name__ == "__main__":
         axs[1].set_xlabel(r"Regularizaton parameter: $\lambda$")
         axs[1].set_ylabel(r"Learning rate: $\eta$")
         fig.tight_layout()
-        plt.savefig("epoch50_bs50_l2_neuron10_sigmoid_heatmap_classifier.png")
+        plt.savefig("epoch50_bs50_l2_neuron10_sigmoid_heatmap_classifier.pdf")
         plt.show()
 
     if False: # This piece of code will produce the various tables presented in the section (FFNN: Classification)

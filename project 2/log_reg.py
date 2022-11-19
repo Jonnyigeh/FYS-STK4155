@@ -5,12 +5,24 @@ import seaborn as sns
 from autograd import grad
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
+from sklearn.preprocessing import StandardScaler
 from sklearn import datasets
 from sys import exit
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 np.random.seed(0)
 class log_regressor():
+    """Class for logistic regression used for binary classification (hard classifier)
+            The default values are chosen for classifying the WBC dataset.
+
+    args:
+        X_data                      (np.array): Input data
+        Y_data                      (np.array): Target output data
+        epochs                           (int): Number of epochs (default=50)
+        batch_size                       (int): Size of minibatches (default=50)
+        eta                            (float): Learning rate (default=0.3)
+        lmbd                           (float): Regularization parameter (default=0.1)
+    """
     def __init__(self,
             X_data,
             y_data,
@@ -74,11 +86,31 @@ def train(X, y, M, n_epochs, eta):
         return 1 / (1 + np.exp(-x))
 
     def cost_func(self, ytilde):
+        """Cost function for the logistic regressor.
+            From log-likelihood (Cross entropy)
+
+        args:
+            ytilde          (np.array): Model data to be compared to target (self.y)
+
+        returns:
+            loss            (np.array): The loss of model vs target
+        """
         loss = -np.mean(self.y * (np.log(ytilde)) - (1 - self.y) * np.log(1 - ytilde))
 
         return loss
 
     def grad_cf(self, X, y, ytilde):
+        """Gradient of the cross entropy
+
+        args:
+            X               (np.array): Input data
+            y               (np.array): target data
+            ytilde          (np.array): model data
+
+        returns:
+            gradW           (np.array): Gradient of cf wrt. weights
+            gradb           (np.array): Gradient of cf wrt. bias
+        """
         m = X.shape[0]
 
         gradW = - 1 / m * X.T @ (y.reshape(ytilde.shape) - ytilde)
@@ -129,7 +161,9 @@ if __name__ == "__main__":
     # This code will produce the heat map shown in result section (Logistic Regressino: Classification)
     data, target = datasets.load_breast_cancer(return_X_y=True)
     train_data, test_data, train_target, test_target = train_test_split(data, target, test_size=0.2)
-
+    SS = StandardScaler()                        # Standard scaling the data to keep the network behaving nicely
+    train_data = SS.fit_transform(train_data)
+    test_data = SS.fit_transform(test_data)
     eta_vals = np.logspace(-6, 0, 7)
     lmbd_vals = np.logspace(-6, 0, 7)
     train_accuracy = np.zeros((len(eta_vals), len(lmbd_vals)))
@@ -145,9 +179,7 @@ if __name__ == "__main__":
                 test_accuracy[i][j] = accuracy_score(test_target.reshape(ytilde.shape), ytilde)
             except ValueError:
                 breakpoint()
-        # print("Accuracy score on training data " + str(accuracy_score(yt_train, train_target.reshape(yt_train.shape))))
-        # print("Accuracy score on test data: " + str(accuracy_score(ytilde, test_target.reshape(ytilde.shape))))
-        # print("\n")
+
     fig, axs = plt.subplots(2, figsize=(8,8))
     sns.heatmap(test_accuracy, annot=True, ax=axs[0], fmt=".2f",
                             xticklabels=eta_vals, yticklabels=lmbd_vals)
