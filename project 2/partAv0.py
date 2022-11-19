@@ -131,10 +131,10 @@ class GD():
                 s = s / (1 - avg_time2)
                 i = 1
                 beta = beta0 - eta * m / (np.sqrt(s) + delta)
-                # mse = []
+                mse = []
                 j = 0
                 while np.linalg.norm(g) > eps and j < 1000:
-                    # mse.append(self.MSE(self.y,self.DM@beta))
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     j += 1
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
@@ -155,10 +155,10 @@ class GD():
                 I = np.eye(dim1, dim2)
 
                 beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape)
-                # mse = []
+                mse = []
                 i = 0
                 while np.linalg.norm(gradC[-1]) > eps and i < 1000:
-                    # mse.append(self.MSE(self.y,self.DM@beta))
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     i += 1
                     gradC.append(2 / n * (DM.T @ (DM @ beta - y)))
                     k = len(gradC)
@@ -175,10 +175,10 @@ class GD():
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
                 s_prev = s
                 beta = beta0 - eta * g / np.sqrt(s + delta)
-                # mse = []
+                mse = []
                 i = 0
                 while np.linalg.norm(g) > eps and i < 1000:
-                    # mse.append(self.MSE(self.y,self.DM@beta))
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
@@ -190,8 +190,8 @@ class GD():
                 beta = beta0 - eta * gradC
                 mse = []
                 i = 0
-                while i > 100:
-                # while np.linalg.norm(gradC) > eps and i < 1000:
+                # while i > 100:
+                while np.linalg.norm(gradC) > eps and i < 1000:
                     mse.append(self.MSE(self.y,self.DM@beta))
                     i += 1
                     gradC = 2 / n * (DM.T @ (DM @ beta - y))
@@ -215,11 +215,11 @@ class GD():
                 s = s / (1 - avg_time2)
                 i = 1
                 beta = beta0 - eta * m / (np.sqrt(s) + delta)
-                # mse = []
+                mse = []
                 j = 0
 
                 while np.linalg.norm(g) > eps and j < 1000:
-                    # mse.append(self.MSE(self.y,self.DM@beta))
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     j += 1
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
@@ -556,10 +556,14 @@ class GD():
                 m_prev = 0
                 s_prev = 0
                 t = 0
+                mse = []
+                j = 0
 
                 for epoch in range(n_epochs):
                     for i in range(m_):
                         t += 1
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -575,11 +579,15 @@ class GD():
                         s_prev = s
 
 
-            elif ADAGRAD:
+            elif ADAGRAD: 
                 gradC = []
                 delta = 1e-8
+                mse= []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j+=1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -596,8 +604,12 @@ class GD():
                 avg_time = 0.9
                 delta = 1e-8
                 s_prev = 0
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j+=1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -608,8 +620,12 @@ class GD():
                         s_prev = s
 
             else:
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j+=1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -661,6 +677,7 @@ class GD():
                 for epoch in range(n_epochs):
                     for i in range(m_):
                         j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -672,7 +689,6 @@ class GD():
                         I = np.eye(dim1, dim2)
                         beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape)
                         mse.append(self.MSE(self.y,self.DM@beta))
-
 
             elif RMSprop:
                 avg_time = 0.9
@@ -692,17 +708,15 @@ class GD():
                         beta -= eta * g / np.sqrt(s + delta)
                         s_prev = s
                         mse.append(self.MSE(self.y,self.DM@beta))
-
-
             else:
                 mse = []
                 j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
                         j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)              # Remove the upper m, since we add k*M + M meaning it'd crash
                                                                 # if we by chance choose k = max(m)
-                        mse.append(self.MSE(self.y,self.DM@beta))
                         eta = learning_rate(epoch * m_ + i)
                         DMi = DM[k*M:k*M + M]
                         yi = y[k*M:k*M + M]
@@ -763,8 +777,12 @@ class GD():
                 m_prev = 0
                 s_prev = 0
                 t = 0
+                mse =[]
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         t += 1
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
@@ -786,8 +804,12 @@ class GD():
             elif ADAGRAD:
                 gradC = []
                 delta = 1e-8
+                mse =[]
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -807,8 +829,12 @@ class GD():
                 avg_time = 0.9
                 delta = 1e-8
                 s_prev = 0
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -821,8 +847,12 @@ class GD():
                         s_prev = s
 
             else:
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch*m_ + i)
                         DMi = DM[k*M:k*M + M]
@@ -955,169 +985,79 @@ if __name__ == "__main__":
     designmatrix = inst.DM
     ydata = inst.y
 
-    ols_beta1,mse                  = inst.PlainGD()
-    # ols_beta2,mse                  = inst.MGD()
-    # ols_beta3                      = inst.SGD()
-    # ols_beta4                      = inst.SMGD()
-    
+
+
+if True:    # RIDGE values
+
     ridge_beta1,mse_PlainGD        = inst.PlainGD(method="Ridge")
     ridge_beta2,mse_MGD            = inst.MGD(method="Ridge")
     ridge_beta3,mse_SGD            = inst.SGD(method="Ridge")
     ridge_beta4,mse_SMGD           = inst.SMGD(method="Ridge")
-      
-    # print(f"MSE of PlainGD given parameter lmbda and eta: {inst.MSE(ydata,designmatrix@ols_beta1)}")
+if False:   # RIDGE models
+    model1_RIDGE = designmatrix @ ridge_beta1
+    mse1_ols = inst.MSE(ydata, model1_ols)
+    model2_RIDGE = designmatrix @ ridge_beta2
+    mse2_ols = inst.MSE(ydata,model2_ols)
+    model3_RIDGE = designmatrix @ ridge_beta3
+    mse3_ols = inst.MSE(ydata,model3_ols)
+    model4_RIDGE = designmatrix @ ridge_beta4
+    mse4_ols = inst.MSE(ydata,model4_ols)  
+if True: # This code prints out all MSE for various eta values for different lmbda values ranging from [1E-1 - 1E-6]
+    lmbdaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+    mse_1 = np.zeros(len(lmbdaa))
+    
+    for i, lmbda_ in enumerate(lmbdaa):
+        beta = inst.PlainGD(eta=0.01,lmbda=lmbda_)  
+        mse_1[i] = inst.MSE(ydata,designmatrix@beta)
 
-
-# 1)
-# OLS
-# PlainGD VS MGD
-#     plt.plot(x,mse_PlainGD11, label='MSE: Plain Gradient Descent')
-#     plt.plot(x,mse_MGD2, label='MSE: Plain Gradient Descent with momentum')
-#     plt.title('$\eta = 0.01$, datapoints = 100')
-#     plt.xlabel('Number of gradient steps')
-#     plt.ylabel('MSE')
-#     plt.legend(prop={'size': 10})
-#     plt.savefig('/Users/fuaddadvar/fys-STK4155/partA/MSE_PlainGD_vs_PlainGDmomentum.pdf')
-#     # plt.show()
-
-    plt.plot(x[:100],mse_PlainGD[:100], label="Plain Gradient Descent ")
-    plt.plot(x[:100],mse_MGD[:100],label="Plain Gradient Descent with momentum")
-    plt.plot(x[:100],mse_SGD[:100],label='Stochastic Gradient Descent')
-    plt.plot(x[:100],mse_SMGD[:100],label='Stochastic Gradient Descent with momentum')
-    plt.title("MSE for the gradient descent methods")
-    plt.xlabel("Number of iterations",fontsize = 10)
-    plt.ylabel("MSE",fontsize = 10)
-    plt.legend(prop={'size': 10})
-    plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/MSE_All_methods_convergence_for_RIDGE.pdf")
+    print(f"MSE data for constant eta= 0.001: {mse_1}")
+if False:# This code prints out all MSE for various lmbda values for different eta values ranging from [1E-1 - 1E-6]
+        etaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+        mse_2 = np.zeros(len(etaa))
+        for i, etaaa in enumerate(etaa):
+            beta = inst.PlainGD(eta =etaaa,lmbda=6.0,method="Ridge")
+            mse_2[i] = inst.MSE(ydata,designmatrix@beta)
+        print(mse_2)
+    
+if False: #Heatmap for mse, lmbda and eta
+    lmbdaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+    etaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+    mse_1 = np.zeros((len(lmbdaa), len(etaa)))
+    for i, lmbda_ in enumerate(lmbdaa):      
+        for j, etaaa in enumerate(etaa):
+            beta = inst.PlainGD(eta =etaaa,lmbda=lmbda_,method="Ridge")
+            mse_1[i][j] = inst.MSE(ydata,designmatrix@beta)
+    maxvalue_1 = np.max(mse_1) 
+    #Creating dataframe
+    df1 = pd.DataFrame(data=mse_1[:,:],
+                        index= lmbdaa,
+                         columns= etaa)
+    
+    #Plotting heatmap for Optimal lambda and eta
+    sns.heatmap(df1.div(maxvalue_1),annot=True,fmt='.2g')
+    plt.title("Optimal hyperparamteres $\lambda$ and $\eta$")
+    plt.xlabel("Ridge parameter, $\lambda$")
+    plt.ylabel("Learningrate, $\eta$")
+    #plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_lmbda_eta.pdf")
     plt.show()
 
-
-
-    
-#     ridge_beta2 = inst.MGD(method="Ridge")
-#     ridge_beta3 = inst.SGD(method="Ridge")
-#     ridge_beta4 = inst.SMGD(method="Ridge")
-
-
-
-# # #OLS    
-# #     model1_ols = designmatrix @ ols_beta1
-# #     mse1_ols = inst.MSE(ydata, model1_ols)
-
-# #     model2_ols = designmatrix @ ols_beta2
-# #     mse2_ols = inst.MSE(ydata,model2_ols)
-
-# #     model3_ols = designmatrix @ ols_beta3
-# #     mse3_ols = inst.MSE(ydata,model3_ols)
-
-# #     model4_ols = designmatrix @ ols_beta4
-# #     mse4_ols = inst.MSE(ydata,model4_ols)
-
-# #RIDGE
-#     # model1_ridge = designmatrix @ ridge_beta1
-#     # mse1_ridge = inst.MSE(ydata, model1_ridge)
-    
-#     model3_ridge = designmatrix @ ridge_beta3
-#     mse3_ridge = inst.MSE(ydata,model3_ridge)
-
-#     model4_ridge = designmatrix @ ridge_beta4
-#     mse4_ridge = inst.MSE(ydata,model4_ridge)
-#     lrates = [""]
-
-#     lmbdaa = np.array((0.1,0.1,0.001,0.0001,0.00001,0.000001,0.0000001))
-#     mse_1 = np.zeros(len(lmbdaa))
-#     for i, lmbda_ in enumerate(lmbdaa):
-#         beta = inst.PlainGD(eta=0.001,lmbda=lmbda_,method="Ridge")  
-#         mse_1[i] = inst.MSE(ydata,designmatrix@beta)
-#     print(mse_1)
-#     etaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
-#     mse_2 = np.zeros(len(etaa))
-#     for i, etaaa in enumerate(etaa):
-#         beta = inst.PlainGD(eta =etaaa,lmbda=6.0,method="Ridge")
-#         mse_2[i] = inst.MSE(ydata,designmatrix@beta)
-#     print(mse_2)
-#     x = np.linspace(1,7,7)
-
-
-#     plt.plot(x,mse_1, label="MSE: constant $\lambda$")
-#     plt.plot(x,mse_2, label="MSE constant $\eta$")
-#     plt.xlabel("$\lambda$ and $\eta$")
-#     plt.ylabel("MSE")
-#     plt.legend()
-#     plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_epochs_minibatches.pdf")
-#     plt.show()
-    
-
-    
-#     # #Heatmap for mse, lmbda and eta
-#     # lmbdaa = np.array((0.2,0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
-#     # etaa = np.array((0.2,0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
-#     # mse_1 = np.zeros((len(lmbdaa), len(etaa)))
-#     # for i, lmbda_ in enumerate(lmbdaa):      
-#     #     for j, etaaa in enumerate(etaa):
-#     #         beta = inst.PlainGD(eta =etaaa,lmbda=lmbda_,method="Ridge")
-#     #         mse_1[i][j] = inst.MSE(ydata,designmatrix@beta)
-
-
-# #     # #Heatmap for mse, minibatches and epochs
-# #     # epochs = np.array((50,25,20,15,10,9,8,7,6,5))
-# #     # minibatches = np.array((50,25,20,15,10,9,8,7,6,5))
-# #     # mse_2 = np.zeros((len(epochs), len(minibatches)))
-#     # for i, epoch in enumerate(epochs):
-#     #     for j, batch_size in enumerate(minibatches):
-#     #         beta= inst.SGD(M=batch_size,n_epochs=epoch,method="Ridge")
-#     #         mse_2[i][j]= inst.MSE(ydata,designmatrix@ridge_beta1)
-
-    
-    # Creating dataframe
-    # df1 = pd.DataFrame(data=mse_1[:,:],
-    #                     index= lmbdaa,
-    #                      columns= etaa)
-    
-#     breakpoint()
-    
-#     # df2= pd.DataFrame(data=mse_2[:,:],
-#     #                     index = epochs,
-#     #                     columns = minibatches)
-    
-#     # minvalue_1 = np.min(mse_1)
-#     # maxvalue_1 = np.max(mse_1) 
-#     # minvalue_2 = np.min(mse_2) 
-#     # maxvalue_2 = np.max(mse_2)  
-    
-#     # print("___MAX__MIN___lmbda__eta____")
-#     # print(f"Minimum MSE: {np.min(mse_1)}")
-#     # print(f"Maximum MSE: {np.max(mse_1)}")
-#     # print("___MAX__MIN___epchs__minibatches____")
-#     # print(f"Minimum MSE: {np.min(mse_2)}")
-#     # print(f"Maximum MSE: {np.max(mse_2)}")
-
-    
-    # #Plotting heatmap for Optimal lambda and eta
-    # sns.heatmap(df1,annot=True,fmt='.2g')
-    # plt.title("Optimal hyperparamteres $\lambda$ and $\eta$")
-    # plt.xlabel("Ridge parameter, $\lambda$")
-    # plt.ylabel("Learningrate, $\eta$")
-    # #plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_lmbda_eta.pdf")
-    # plt.show()
-    
-#     # #Plotting heatmap for Optimal Minibatches and epochs
-#     # sns.heatmap(df2.div(maxvalue_2),annot=True,fmt='.2g')
-#     # plt.title("Optimal hyperparamteres $M$ and $epochs$")
-#     # plt.xlabel("Epochs")
-#     # plt.ylabel("Minibatches, $M$")
-#     # plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_epochs_minibatches.pdf")
-#     # plt.show()
-
-#     # #Plotting ydata,polyfunction + noise against x, np.linspace.
-#     # plt.plot(x,ydata,label = "ydata with noise",color='darkcyan')
-#     # plt.title("Polynomial function with added noise")
-#     # plt.xlabel("x")
-#     # plt.ylabel("p(x)")
-#     # plt.legend(loc="lower right",prop={'size': 8})
-#     # plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/ydata_and_noise.pdf")
-#     # plt.show()
-
-
-
-
+if False: #Heatmap for mse, minibatches and epochs
+    epochs = np.array((50,25,20,15,10,9,8,7,6,5))
+    minibatches = np.array((50,25,20,15,10,9,8,7,6,5))
+    mse_2 = np.zeros((len(epochs), len(minibatches)))
+    for i, epoch in enumerate(epochs):
+        for j, batch_size in enumerate(minibatches):
+            beta= inst.SGD(M=batch_size,n_epochs=epoch,method="Ridge")
+            mse_2[i][j]= inst.MSE(ydata,designmatrix@ridge_beta1)
+            
+    df2= pd.DataFrame(data=mse_2[:,:],
+                        index = epochs,
+                        columns = minibatches)
+    maxvalue_2 = np.max(mse_2)  
+    #Plotting heatmap for Optimal Minibatches and epochs
+    sns.heatmap(df2.div(maxvalue_2),annot=True,fmt='.2g')
+    plt.title("Optimal hyperparamteres $M$ and $epochs$")
+    plt.xlabel("Epochs")
+    plt.ylabel("Minibatches, $M$")
+    plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_epochs_minibatches.pdf")
+    plt.show()
