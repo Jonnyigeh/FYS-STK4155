@@ -1,0 +1,531 @@
+\documentclass[../main.tex]{subfiles}
+
+\begin{document}
+\newpage
+\section{Method and theory}\label{method_and_theory}
+
+
+
+
+\subsection{Linear regression}
+\cite{Lecture_notes_Morten}Linear regression is a method for building a linear model that %deals with describing a sampled
+describes a sampled distribution of a given random variable \ensuremath{y} and how it varies as function of another variable or set of such variables \ensuremath{\mathbf{x} = [x_0,x_1,...,x_{n-1}]^T}. It's given that the first variable, $y$, is called a \textbf{dependent} variable, which gives the response of the system, while the set of \ensuremath{\mathbf{x}} is the \textbf{independent} variable, called the predictor.
+The linear regression model seeks to find a compatible function \ensuremath{p(\mathbf{y}|\mathbf{x}}), where the estimation of the function is made by using a dataset $\{y_i,x_{i1},...,x_{ip}\}_{i=1}^{n}$. The linear regression model assumes a linear relationship of the mean of the response variable and the predictor variables. I.e a linear combination of the regression coefficients can be constructed. Furthermore, we assume the predictor variables to be fixed - and thus the linearity only restricts the parameters $\beta$ to be linear, and not the predictors to be linear (since these are assumed fixed). \\ \\
+
+In this linear model, a random variable "noise", $\epsilon$, is added as a factor between the relationship of $x$ and $y$ variables. Thus giving us the model:
+
+\begin{equation}
+    y_i = \beta_0 + \beta_{1}x_{i1}+,...,+\beta_{p}x_{ip} + \epsilon_i = \mathbf{x}_i^{T} \mathbf{\beta} + \epsilon_i, \hspace{3mm} i = 1,...,n, 
+\end{equation}
+and hence we can write in matrix notation:
+\begin{equation}
+    \mathbf{y} =\mathbf{X}\mathbf{\beta} + \mathbf{\epsilon}, \label{eq:lin_model}
+\end{equation}
+where,
+\[
+\mathbf{y} = \begin{bmatrix} 
+    y_1\\
+    y_2\\
+    \vdots\\
+    y_n
+    \end{bmatrix},
+\]
+\[
+\mathbf{X} = \begin{bmatrix}
+
+    \mathbf{x}_1^{T}\\
+    \mathbf{x}_2^{T}\\
+    \vdots\\
+    \mathbf{x}_n^{T}\\
+    \end{bmatrix}  
+=
+\begin{bmatrix}
+1   & x_{11} & \hdots &x_{1p}\\
+1   &   x_{21}& \hdots& x_{2p}\\
+\vdots& \vdots& \ddots& \vdots\\
+1   &x_{n1} & \hdots&   x_{np}
+\end{bmatrix}
+\]
+and,
+\[
+\mathbf{\beta} = \begin{bmatrix}
+\beta_0    \\
+\beta_1    \\
+\vdots    \\
+\beta_p    
+\end{bmatrix},
+\mathbf{\epsilon} = \begin{bmatrix}
+\epsilon_1\\
+\epsilon_2\\
+\vdots\\
+\epsilon_n
+\end{bmatrix}.
+\]
+\subsubsection{Ordinary Least Squares}\label{refmethod:OLS}
+The method of ordinary least squares goes directly from equation \eqref{eq:lin_model}, and assumes that the measured data $\mathbf{y}$, is composed of a "true" model $f(x) = \mathbf{X\beta}$ and the noise $\epsilon$, and seeks to find a model
+\begin{align*}
+    \hat y = \mathbf{X}\mathbf{\hat\beta}
+\end{align*}
+that can approximate the true model $f(x)$. By differentiation of the cost function(see \cite{Lecture_notes_Morten}), we obtain the following expression for the parameters 
+\begin{align}
+    \mathbf{\hat\beta} = (\mathbf{X}^{T}\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}
+\end{align}
+As we can see, this is something we can easily compute numerically \emph{if} the $\mathbf{X}^{T}\mathbf{X}$ matrix is invertible. 
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+def OLS(DM, Z):
+    """Generates the parameters beta for a linear OLS fit.
+    
+    args:
+        DM      (np.array): Design matrix
+        Z       (np.array): Measured datapoints
+    
+    returns:
+        beta    (np.array): Parameters beta for the OLS model
+    """
+    beta = np.linalg.pinv(DM.T @ DM) @ DM.T @ Z.ravel()
+    
+    return beta
+
+\end{lstlisting}
+\captionof{lstlisting}{The following short piece of code illustrates how this can be done using NumPy.}
+\vskip0.1in
+\indent You may notice we've used the function .pinv and not .inv, and this is to combat potential failures in our program due to numerical inaccuracies (i.e uninvertible matrices that in theory should be invertible etc.). Overall this is just a more robust matrix inversion tool. \footnote{\url{https://numpy.org/doc/stable/reference/generated/numpy.linalg.pinv.html}}
+
+\\ \\ The punch in this short piece of code is that it does not mind the design matrix to be multidimensional, so this function can easily be applied to our Franke-Function, to obtain a polynomial fit in 2D.
+\newpage
+\subsubsection{Ridge Regression}\label{refmethod:RIDGE}
+We will also implement the linear regression method of Ridge Regression\footnote{\url{https://www.mygreatlearning.com/blog/what-is-ridge-regression/}}. 
+This method of regression is in fact very similar to the Ordinary Least Squares (OLS) \eqref{refmethod:OLS}, but provides a solution when the matrix $\mathbf{X^TX}$ is non-invertible (it has 0 somewhere along the diagonal). The genius way to solve this, is to add a very small non-zero number, $\lambda$, to the diagonal, and then compute the inversion, as follows
+\begin{align}
+     \mathbf{\hat\beta} = (\mathbf{X}^{T}\mathbf{X} + \lambda\mathbf{I})^{-1}\mathbf{X}^T\mathbf{y}.
+\end{align}
+\begin{lstlisting}[language=Python]
+import numpy as np
+def Ridge(DM, Y, lmb):
+    """Performs the Ridge Regression analysis
+    
+    args:
+        DM      (np.array): Design Matrix
+        Y       (np.array): Measured datapoints
+        
+    returns:
+        beta    (np.array): Parameters for our polynomial fit
+    
+    """
+    hessian = DM.T @ DM
+    dim1, dim2 = np.shape(hessian)
+    I = np.eye(dim1, dim2)
+    beta = np.linalg.pinv(hessian + lmb * I) @ DM.T @ Z.ravel()
+
+    return beta
+\end{lstlisting}
+\captionof{lstlisting}{The following code will perform the Ridge Regression}
+\label{code:RIDGE}
+\vskip0.1in
+Naturally, this method will be more robust and can be used without taking into account the correlation in the dependent variables.  \\\indent However, from this non-zero $\lambda$, a new optimization problem arises:\\Which values of $\lambda$ provides the best estimate? We need to make a new estimate, by performing the Ridge Regression for various values of $\lambda$, and then find the optimal parameter $\lambda$ that minimizes the cost function (MSE). The following explains in steps how this procedure can be done
+\begin{itemize}
+    \item Define array of $\lambda$'s 
+    \item Evaluate Ridge Regression using the same X,Y datapoints with the i'th value of $\lambda$
+    % \begin{itemize}
+    %     \item Use the i'th model to calculate MSE (or any other estimand desired)
+    %     \item 
+    % \end{itemize}
+    \item Use the i'th model to calculate MSE (or any other estimand desired)
+    \item Find (by plotting or min()/max() function) which $\lambda_i$ provides the best estimates for your estimands.
+\end{itemize}
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+
+lmbdas = np.logspace(min_lambda,max_lambda,nlambdas)
+for lmb in lmbdas:
+    model[i] = Ridge_Regression_function(X,Y, lmb)
+    MSE[i] = MSE(Y, model[i])
+optimal_indx = np.where(MSE == np.min(MSE))
+\end{lstlisting}
+\captionof{lstlisting}{This short piece of code illustrates how this can be done numerically.}
+
+
+\subsubsection{LASSO Regression}\label{refmethod:LASSO}
+Very similar to the Ridge Regression, where the key difference lies in how we define the cost function. Whereas for Ridge Regression we define the cost function with a penalty $\lambda$ on the parameters beta as follows:
+\begin{align}
+    C(\beta) = 
+    \min_{\boldsymbol{\beta}\in
+{\mathbb{R}}^{p}}\frac{1}{n}\vert\vert \boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta}\vert\vert_2^2+\lambda\vert\vert \boldsymbol{\beta}\vert\vert_2^2 ,\label{eq:cost_func_ridge}
+\end{align}
+using the norm-2 vector 
+\begin{equation*} \label{eq:norm_2_vector}
+    \vert\vert \boldsymbol{x}\vert\vert_2 = \sqrt{\sum_i x_i^2}.
+\end{equation*}
+which, by minimizing this function we obtain our expression for $\beta$ as presented in section \eqref{refmethod:RIDGE}. (see chap. 4 in \cite{Lecture_notes_Morten}) However, the Lasso regression makes a different penalty on the parameters by using the norm-1 vector
+\begin{equation*} \label{eq:norm_2_vector}
+    \vert\vert \boldsymbol{x}\vert\vert_1 = {\sum_i \vert x_i\vert}.
+\end{equation*}
+
+Giving us a new cost function on the form
+\begin{align*}
+    C(\beta) = 
+    \min_{\boldsymbol{\beta}\in
+{\mathbb{R}}^{p}}\frac{1}{n}\vert\vert \boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta}\vert\vert_2^2+\lambda\vert\vert \boldsymbol{\beta}\vert\vert_1 ,
+\end{align*}
+This does not have a pretty analytical expression for defining the parameters $\beta$, and such we need some aid when we are to implement this regression method. To perform this regression we will use \textbf{Sci-kit learn}, which has LASSO regression\footnote{\url{https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html}} implemented in it's linear regression package. The following illustrates how to import and use this method
+\newpage
+\begin{lstlisting}[language=Python]
+import numpy as np
+from sklearn.linear_regression import Lasso
+
+def LASSO(X, Y, lmbda):
+    """Performs the LASSO regression method
+    
+    args:
+        X           (np.array) : Design matrix 
+        Y           (np.array) : Measured datapoints
+        lmbda       (float) : Value for the lambda-penalty 
+    
+    returns:
+        beta    (np.array): parameters beta for our Lasso regression fit
+    """
+    lasso_reg = Lasso(lmbda)
+    lasso_reg.fit(X,Y)
+    model = lasso_reg.predict(DM)
+    beta = lasso_reg.coef_
+    
+    return beta
+\end{lstlisting}
+\captionof{lstlisting}{This code shows the method of LASSO.}
+\label{code:LASSO}
+\vskip0.1in
+And as we can see, we meet the same optimization problem like we did with Ridge Regression. We should iterate over multiple values for $\lambda$ to find the optimal parameter to fit our model.
+
+% \subsubsection{Ridge and LASSO regression}
+% We have the expression for the Standard Mean Squared Error which is used to define the cost function and the ordinary least square method:
+
+
+% \begin{equation}\label{eq: MSE_and_OLS_method}
+%     \min_{\boldsymbol{\beta}\in{\mathbb{R}}^{p}}\frac{1}{n}\sum_{i=0}^{n-1}\left(y_i-\tilde{y}_i\right)^2=\frac{1}{n}\vert\vert \boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta}\vert\vert_2^2,
+% \end{equation}
+
+
+% where we used the definition of a norm-2 vector:
+% \begin{equation} \label{eq:norm_2_vector}
+%     \vert\vert \boldsymbol{x}\vert\vert_2 = \sqrt{\sum_i x_i^2}.
+% \end{equation}
+
+
+% We minimize \eqref{eq: MSE_and_OLS_method} with respect to the parameters $\boldsymbol{\beta}$ we could then obtain an analytical solution for the paramters $\boldsymbol{\beta}$. We can add a regularization paramter $\lambda$ by defining a new cost function that we can optimize, given as:
+
+
+% \begin{equation}\label{}
+%     \min_{\boldsymbol{\beta}\in
+% {\mathbb{R}}^{p}}\frac{1}{n}\vert\vert \boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta}\vert\vert_2^2+\lambda\vert\vert \boldsymbol{\beta}\vert\vert_2^2 ,
+% \end{equation}
+
+
+% This leads to the ridge regression minimization problem where it is required that $\vert\vert \boldsymbol{\beta}\vert\vert_2^2\le t$, where $t$ is a finite number larger than zero. 
+
+
+% By defining the cost function with parameters $\beta$ and $X$ we have:
+% \begin{equation}
+% C(\boldsymbol{X},\boldsymbol{\beta})=\frac{1}{n}\vert\vert\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta}\vert\vert_2^2+\lambda\vert\vert \boldsymbol{\beta}\vert\vert_1
+% \end{equation}
+
+% Thus giving us a new optimizing equation called LASSO regression: 
+
+% \begin{equation}\label{eq:Ridge}
+% \min_{\boldsymbol{\beta}\in
+% {\mathbb{R}}^{p}}\frac{1}{n}\vert\vert \boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta}\vert\vert_2^2+\lambda\vert\vert \boldsymbol{\beta}\vert\vert_1,
+% \end{equation}
+
+ 
+ 
+\subsection{Assessment methods to evaluate linear regression models}\label{refmethod:assessment_method_}
+In order for us to properly assess whether or not our models are successful in fitting our data, it is not sufficient to merely study the graph as this is tedious and not something that can be done efficient should we produce multiple models (as we will see when do resampling). \\ \\What we need are ways to evaluate our models performance by numbers, such that we can use these quantities to compare results from various ways of linear regression - be it different methods or using different parts of the datasets (resampling).
+
+\subsubsection{Mean squared error}\label{refmethod: MSE}
+Perhaps the most well-known way of assessing model performance is the mean squared error (MSE):
+\begin{align}
+    \text{MSE} = \frac{1}{n}\sum_i^n(y_i - \hat y_i)^2, \,\,\,\,i=0,..,n.
+\end{align}
+
+Which gives us an estimate of how much our model deviates, on average, from the measured data in each single point. This is a simple, yet efficient (in many cases), way of measuring the performance of our model fit. 
+
+\begin{lstlisting}[language=Python]
+def MSE(data, model):
+    """Calculates the Mean-Squared-Error given measured data, and model data.
+    
+    args:
+        data    (np.array): Measured data
+        model   (np.array): Model data from the linear model
+    
+    returns:
+        MSE     (float): Mean squared error of the data and model.
+    """
+    mse = np.mean( (data - model) **2)
+
+    return mse
+\end{lstlisting}
+\captionof{lstlisting}{The following piece of code will give the MSE.}
+\vskip0.1in
+If we are working in multiple-dimensions we must make sure the two arrays are of equal dimensions, and be they matrices we can use the \ensuremath{.ravel()} function in numpy to make 1D arrays of all the datapoints contained in the matrix. \\ \\ A drawback of the MSE is that it is not scaled, meaning that outliners (points that deviate greatly, corresponding to faulty measurements) contribute the same amount as any other point - which may give us a skewed value for the MSE, fooling us to believe our model fits nicely when it in fact may not fit at all.
+\subsubsection{$R^2$ score function (coefficient of determination)}\label{refmethod:R2}
+The $R^2$ score function can be thought of as a more robust version of the MSE. It will give you a scaled estimate of how much the model deviates from the dataset, much like the MSE. However, we scale this quantity by the variance of the datapoints - meaning, outlier that deviate extremely will also be scaled down greatly - and this negates the problem we mentioned when talking about the MSE. \\\indent The way to calculate the $R^2$ score is as follows
+\begin{align*}
+    R^2 = 1 - \frac{\sum_i(y_i - \hat y_i)^2}{\sum_i( y_i - \bar y)^2},
+\end{align*}
+where $\bar y$ is the mean value of our measured data, $y$, and $\hat y$ is again our modeldata. \\\indent We recognise the numerator as the MSE, and the denominator as the variance, scaled by a factor $n$, where $n$ is the number of datapoints. 
+\newpage
+\begin{lstlisting}[language=Python]
+def R2(data, model):
+    """Calculates the R2 score value
+    
+    args:
+        data    (np.array): Array of measured datapoints
+        model   (np.array): Array of modelled datapoints (must be of equal length as data)
+    
+    returns:
+        r2      (float): The R2 score value
+    """
+    n = len(data)
+    data_mean = np.mean(data)
+    r2 = 1 - np.sum((data - model) ** 2) / np.sum((data - data_mean) ** 2)
+
+    return r2
+\end{lstlisting}
+\captionof{lstlisting}{This method will estimate the $R^2$ score.}
+\label{code:R2_score}
+
+
+\subsubsection{Bias-variance decomposition of the mean-squared-error}\label{refmethod:Bias_variance_decomp}
+We assume that our measured data consist of a true model plus some noise, i.e
+\begin{align*}
+    y = f(x) + \epsilon,
+\end{align*}
+where the noise follows from a normal distribution, which further gives us that 
+\begin{align*}
+    Var(\epsilon) = \sigma^2.
+\end{align*} Say that we now approximate a model to fit our data,  $\hat y$, we can evaluate the fit of our model by calculating the mean squared error:
+\begin{align*}
+    MSE = E[(y-\hat y)^2].
+\end{align*}
+This however, can be rewritten in terms of the bias of our model, the variance in the noise and the variance of our model, as follows
+\begin{align}
+    MSE = \text{Bias}[\hat f]^2 + \sigma ^2 + \text{Var}[\hat f] \label{eq:bias_var_MSE}.
+\end{align}
+This means, we can evaluate our model by looking at the \emph{bias}: We can interpret this as an error caused by our models inherent characteristics, e.g when approximating a polynomial of degree n with a polynomial of degree m - there must be some error due to the dimensional difference between the two polynomials. \indent On the other hand, the \emph{variance} is a measure of how much the model could possibly change around it's mean value. When fitting a polynomial of degree $n$, with a polynomial of degree $m$, when $m>n$ the higher order terms can vary greatly, while still producing a similar fit to our data. \\ (
+See appendix \eqref{app:MSE_bias_var} for full derivation of the decomposition)
+\newpage
+\subsubsection{Bias-variance tradeoff}\label{refmethod:Bias_variance_tradeoff}
+An alternative way to evaluate the performance of our model fit is to study the relation between bias and variance of our model. It can be shown that the MSE of a model is decomposed into the variance and the bias of said model \eqref{eq:bias_var_MSE}. In other words, there is a direct connection between low variance $\leftrightarrow$ high bias, and vice versa, for different levels of complexity of our model fit. 
+\\\\\indent As seen from the Bias-Variance decomposition, we minimize the cost function by simultaneously minimizing bias \emph{and} variance. But we need to be careful, if we make our model to minimize the bias $\rightarrow$ consequently the variance will increase, and then we may end up overfitting (i.e we start fitting the noise). Similarly, trying to minimize the variance will increase the bias and we may end up underfitting (i.e our model does not properly link the relation between response and predictor variables). Nonetheless, studying the Bias-Variance tradeoff will give us insight into how well our model fit is for various levels of complexity - while also giving us an estimate on bias and variance - meaning we can ascertain if our low value for MSE is indeed a good fit, or if we've either over- or underfitted our data. The following plot summarizes our statements
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.5]{Project template/figs/biasvariancetradeoff.png}
+    \caption{This figure shows a very general illustration of the Bias-Variance tradeoff \footnotemark}
+    \label{fig:biasvartradeoff}
+\end{figure}
+\footnotetext{Source: \url{http://scott.fortmann-roe.com/docs/BiasVariance.html}}
+%----------------- Resamplign methods -----------------
+\newpage
+\subsection{Resampling methods}\label{refmethod:resampling}
+\subsubsection{Bootstrap}\label{refmethod: bootstrap}
+Bootstrapping is a method to assign best measures of accuracy to sample estimates. 
+The basic idea of the bootstrap method is that we use random sampling with replacement out of a given distribution of data $(X,Y)$ %, given this distributions data is assumed independent and identically distributed. 
+\\ \\\indent With this resampling technique, one produces new dataset $X_i,Y_i$ calculates a new model fit, e.g $\beta_{new}$, which one can now use to produce new values for different estimands (normally MSE,Variance and Bias). This procedure is repeated over $n$  iterations, where $n$ is your desired number of bootstraps. \\ \\ Now one uses these $n$ values for the estimands to calculate a mean value for each estimand, which in turn will give you an accurate approximation for the \emph{true} value for each estimand.
+
+
+\begin{lstlisting}[language=Python]
+def bootstrap(X_train, Y_train, X_test, Y_test, niteration=100):
+    """ Performs bootstrap
+    args: 
+        X_train     (np.array): Array of trained datapoints
+        Y_train     (np.array): Array of trained datapoints
+        X_test      (np.array): Array of measured datapoints
+        Y_test      (np.array): Array of measured datapoints
+    
+    returns:
+        model      (np.array): Matrix with given measured column vectors 
+        
+
+    """
+    model = np.zeros((np.shape(Y_test)[0], niteration))
+        for i in range(niteration):
+            new_X, new_Y = resample(X_train, Y_train)
+            model[:,i] = X_test @ OLS(new_X, new_Y).ravel()
+
+
+    return model
+\end{lstlisting}
+\captionof{lstlisting}{Given method for Bootstrap}
+\label{code:bootstrap}
+
+
+
+
+% over $n$ amount of times for given amount of bootstrap, so that we can estimate the most accurate data from the samples that we used. 
+
+% If we have a given set of sampling data, we use random sampling with replacement, that consists of randomly picking a datapoint from that sampling data and adding it onto a new data set. This new data set will gather all these new data into that dataset and we will calculate the mean value so that we can receive a spesific data point from that cycle. By repeating this multiple times we call this \textbf{bootstrapping} and then will find a accurate sampling distribution, which can we represented in a histogram or a table of data.  
+\newpage
+\subsubsection{Cross-validation}\label{refmethod: crossvalidation}
+
+Cross-validation is a method of model validation which splits the data in different ways of order to accomplish the better estimates of so called real world performance, and minimize validation error.
+
+By using K-fold validation which is a very precise method of cross-validation, we shuffle the data and splits it into $k$ number of folds. The basic idea of K-fold validation is to take one group as the test data set, and the other $k-1$ groups as the training data, fitting and evaluating a model, and recording the chosen score. We then repeat this process multiple times for each fold as the test data and all the score averaged to obtain a more comprehensive model validation score.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=2.5in]{Project template/figs/K-fold-cross-validation-method.pdf}
+    \caption{K-fold cross-validation method}
+    \label{fig:k_fold_crossval}
+\end{figure}
+\vskip0.1in
+
+\begin{lstlisting}[language=Python]
+def cross_val(X, Y, k = 10):
+    """ Performs Cross validation 
+    args: 
+        X       (np.array): Design matrix
+        Y       (np.array): Measured data
+        k       (integer) : Number of folds (default = 10)
+        
+    returns:
+        model    (float)  : MSE score after cross validation
+    """
+    kfold = KFold(n_splits=k)
+    score_KFold = np.zeros(k)
+    model = np.mean(score_KFold)
+    for i, (train_inds, test_inds) in enumerate(kfold.split(X)):
+            X_train = X[train_inds]
+            Y_train = Y[train_inds]
+
+            X_test = X[test_inds]
+            Y_test = Y[test_inds]
+            
+            beta = OLS(X_train, Y_train)
+            model = X_test @ beta
+            score_KFold[i] = MSE(Y_test, model)
+    
+    model = np.mean(score_KFold)
+    
+    return model
+\end{lstlisting}
+\captionof{lstlisting}{This short piece of code illutrates how Cross validation kfold method is implemented.}
+
+\subsection{Pre-processing of data}
+\subsubsection{Train-Test splitting of data}\label{refmethod:train_test}
+When working with machine learning algorithms, and fitting methods in general - especially when we are worried our model might be overfitting, a good practice is to split our datasets into training and testing data. 
+What this means is that we split our data into two separate datasets, and we use the training data to produce our model (to train our algorithm), and then we evaluate our model on the test data.  \\ \\ If we don't do this we cannot guarantee that our model fit is good, it may have a low MSE score because we've overfitted the dataset to fit perfectly to this specific dataset - meaning it may be a rather poor model even if we fit said dataset perfectly. When splitting the data we avoid this issue, by keeping the two datasets separate. This way we can create our model using training data, and check that the model works as intended on a completely "different" dataset. In this numerical report we will implement \textbf{scikit learns}\footnote{} train-test-split function to help us split the data.\\\\ 
+\begin{lstlisting}[language=Python]
+from sklearn.model_selection import train_test_split
+def splitdata(X,Y, testsize=0.33):
+    """Splits the given datasets into training and testing data
+                        using sklearns traintestsplit function
+                        
+    args:
+        X               (np.array): Design matrix
+        Y               (np.array): Measured data
+        testsize        (float): The splitsize, i.e what percentage will be testdata (default = 0.33)
+    
+    returns:
+        X_train         (np.array): Training set of design matrix
+        X_test          (np.array): Test set of design matrix
+        Y_train         (np.array): Training set of measured data
+        Y_test          (np.array): Test set of measured data
+    """
+    
+    X_train, Y_train, X_test, Y_test = train_test_split(X,Y,test_size=testsize)
+    return X_train, Y_train, X_test, Y_test
+\end{lstlisting}
+\captionof{lstlisting}{The following code shows how this can be imported, and used.}
+\vskip0.1in
+\subsubsection{Mean normalization and feature scaling}\label{refmethod:MEAN_and_SCALING}
+When working with various datasets, and different design matrices, it is not given that every feature is similar to oneanother. E.g we may produce a design matrix where one feature is the age of a subject, while the next feature corresponds to his or hers yearly salary. Meaning, one feature ranges from 0-99 while the other can range from $0$ - $10^6$. When we looked at the cost functions for Ridge and Lasso regression (see section \eqref{refmethod:RIDGE}, \eqref{refmethod:LASSO} respectively) we saw that these model penalize each $\beta_i$ by the same factor, regardless of their size. What this means is that larger values for beta will dominate when we calculate the cost function. The following plot illustrates how this affects gradient descent (which we can compare to our linear fit by thinking that our unscaled datapoints will jump greatly and thus it will be more challenging to fit a model, while when they are all scaled equally this \emph{should} be simpler, or atleast give us a smaller MSE)
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.8]{Project template/figs/normalize_gradient_descent.png}
+    \caption{Illustration of the necessity of datascaling\footnotemark}
+    \label{fig:Normalization_gradient}
+\end{figure}
+\footnotetext{Source: \url{https://www.jeremyjordan.me/batch-normalization/}}
+\\ \\ \indent One way to combat this problem is to introduce different penalties, $\lambda_i$, for each $\beta_i$, but this is tedious. What we can do instead, is to \emph{scale} our design matrix. The method we will implement in this report is the method of \textbf{mean normalization}.  \\ 
+
+\\\indent Mean normalization scales each column by its mean. When doing mean scaling on a design matrix, this corresponds to removing the first column (since this $=1$ on every row, the mean normalized version has 0), and thus removing the intercept. The strength in this is that now all features will have the same meaning of 0, with this we mean that even if the features corresponds to wildly different quantities e.g kilograms and money, the value 0 has the same meaning - and thus the model fit have the same starting point for all features. (This can be taken a step further by dividing by the st.deviation, but since our features are not in different units we will refrain from doing so). \\\indent
+The following illustrates by steps how one should use mean normalization when performing linear regression with a given method
+\begin{itemize}
+    \item Aquire dataset X, Y
+    \item Train test split dataset
+    \item Construct new datasets: 
+    \begin{itemize}
+        \item scaledX = Xtrain - column-mean(Xtrain)
+        \item scaledY = Ytrain - column-mean(Ytrain)
+    \end{itemize}
+    \item Fit data = method.fit(scaledX, scaledY)
+    \item Find model = method.predict(Xtest - column-mean(Xtrain)) + column-mean(Ytrain)
+\end{itemize}
+The reason we use the same column mean for both scaling test and training data, is due to the fact that one should leave the test dataset untouched in all forms. \\\indent Furthermore, you may be puzzled as to why we need to add the column-mean(Ytrain) to our model - this comes from the fact that mean normalizing removes the intercept, and adding this mean will simply reinstate the intercept. \\\\\indent 
+
+
+\begin{lstlisting}[language=Python]
+def mean_scale(data):
+    """Mean-scales the dataset by the mean of each column vector in data
+
+    args:
+        data        (np.array): meshgrid of datapoints
+
+    returns:
+        new_data    (np.array): Meshgrid of scaled datapoints (now also centered)
+        mean_data   (np.array): Array of the column mean for data.
+    """
+    
+    mean_data = np.mean(data, axis=0, keepdims=True)
+    new_data = ( data - mean_data )
+
+    return new_data, mean_data
+\end{lstlisting}
+\captionof{lstlisting}{The following code will mean normalize a given dataset.}
+
+\newpage
+\subsection{Analysis of real terrain data: Stavanger}
+
+We want to implement OLS, Ridge and LASSO onto a real terrain data where we use crossvalidation as a resampling method and calculate the MSE to evaluate a model fit.
+\\
+We have this following method to  
+\begin{itemize}
+    \item Obtain data for spesific region
+    \item Specify your dataformat to be: \textbf{SRTM Arc-Second Global}
+    \item Download data as  \textbf{GeoTIF} file.
+    \begin{itemize}
+        \item This conducts the files to \emph{tif} format
+    \end{itemize}
+    \item Import \emph{tif} file to a python program using \ensuremath{scipy.misc.imread}
+\end{itemize}
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+from imageio import imread
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+
+#Loading terrain data
+
+terrain_ = imread('SRTM_data_Norway_1.tif')
+
+\end{lstlisting}
+\captionof{lstlisting}{This code loads terrain data.}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

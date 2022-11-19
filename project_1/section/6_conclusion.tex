@@ -1,0 +1,12 @@
+\documentclass[../main.tex]{subfiles}
+
+\begin{document}
+
+
+\section{Conclusion}
+When studying the Franke Functions 2D surface data with added noise, it seems to us that the optimal regression method is that of ordinary least squares. As we've seen from the produced plots and graphs, this is the method that produces the smallest MSE both using bootstrap and cross-validation resampling. ($\approx 0.15$ for the 4th order polynomial fit). Comparing the other two methods to eachother we find that there are rather miniscule differences, and the actual difference in MSE between the two is negligible.
+Our conclusion is that: For a simple function such as the Franke Function with noise as we've included it, the OLS regression method works rather well. If you do however wish to use a model that are more open for fine-tuning (i.e more parameters), there is only minor differences between LASSO and Ridge - and thus you may use whichever you find easiest to implement.
+
+\\ \\ \indent When we did our analysis of the real data, our 5th order polynomial model failed miserably at fitting the given data. Our MSE score was gargantuan, and we can conclude with GREAT certainty that a 5th order polynomial is not a good fit for 2D noisy terrain data. Despite our poor fit, we did however show that out of the three linear regression methods - LASSO was the best one, that produced the best fit with the lowest MSE score (closely followed by ridge). Improvements to our model could surely be made to make the polynomial fit even better, by either increasing the polynomial order (our educated guess is this to be the most effective measure) or by testing for more values of lambda. The latter might not give any improved results, at least not any major improvements.
+
+\end{document}
