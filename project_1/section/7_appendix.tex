@@ -1,0 +1,82 @@
+\documentclass[../main.tex]{subfiles}
+
+\begin{document}
+\section{Appendix}
+\subsection{Source code}\label{app:source_code}
+All the source code is located in \href{https://github.uio.no/Jonnyai/FYS-STK4155}{this GitHub repository}.
+
+\subsection{Derivation of $Var(y_i)$}\label{app:Variance_y_i}
+We have that:
+\begin{align*} \mbox{Var}(y_i) & = \mathbb{E} \{ [y_i
+- \mathbb{E}(y_i)]^2 \} \, \, \, = \, \, \, \mathbb{E} ( y_i^2 ) -
+[\mathbb{E}(y_i)]^2  \\  & = \mathbb{E} [ ( \mathbf{X}_{i, \ast} \,
+\beta + \varepsilon_i )^2] - ( \mathbf{X}_{i, \ast} \, \boldsymbol{\beta})^2 \\ &
+= \mathbb{E} [ ( \mathbf{X}_{i, \ast} \, \boldsymbol{\beta})^2 + 2 \varepsilon_i
+\mathbf{X}_{i, \ast} \, \boldsymbol{\beta} + \varepsilon_i^2 ] - ( \mathbf{X}_{i,
+\ast} \, \beta)^2 \\  & = ( \mathbf{X}_{i, \ast} \, \boldsymbol{\beta})^2 + 2
+\mathbb{E}(\varepsilon_i) \mathbf{X}_{i, \ast} \, \boldsymbol{\beta} +
+\mathbb{E}(\varepsilon_i^2 ) - ( \mathbf{X}_{i, \ast} \, \boldsymbol{\beta})^2 
+\\ & = \mathbb{E}(\varepsilon_i^2 ) \, \, \, = \, \, \,
+\mbox{Var}(\varepsilon_i) \, \, \, = \, \, \, \sigma^2.  
+\end{align*}
+
+\subsection{Derivation of $Var(\beta)$}\label{app:variance_beta}
+\begin{eqnarray*}
+\mbox{Var}(\boldsymbol{\beta}) & = & \mathbb{E} \{ [\boldsymbol{\beta} - \mathbb{E}(\boldsymbol{\beta})] [\boldsymbol{\beta} - \mathbb{E}(\boldsymbol{\beta})]^{T} \}
+\\
+& = & \mathbb{E} \{ [(\mathbf{X}^{T} \mathbf{X})^{-1} \, \mathbf{X}^{T} \mathbf{Y} - \boldsymbol{\beta}] \, [(\mathbf{X}^{T} \mathbf{X})^{-1} \, \mathbf{X}^{T} \mathbf{Y} - \boldsymbol{\beta}]^{T} \}
+\\
+% & = & \mathbb{E} \{ [(\mathbf{X}^{T} \mathbf{X})^{-1} \, \mathbf{X}^{T} \mathbf{Y}] \, [(\mathbf{X}^{T} \mathbf{X})^{-1} \, \mathbf{X}^{T} \mathbf{Y}]^{T} \} - \boldsymbol{\beta} \, \boldsymbol{\beta}^{T}
+% \\
+% & = & \mathbb{E} \{ (\mathbf{X}^{T} \mathbf{X})^{-1} \, \mathbf{X}^{T} \mathbf{Y} \, \mathbf{Y}^{T} \, \mathbf{X} \, (\mathbf{X}^{T} \mathbf{X})^{-1}  \} - \boldsymbol{\beta} \, \boldsymbol{\beta}^{T}
+% \\
+& = & (\mathbf{X}^{T} \mathbf{X})^{-1} \, \mathbf{X}^{T} \, \mathbb{E} \{ \mathbf{Y} \, \mathbf{Y}^{T} \} \, \mathbf{X} \, (\mathbf{X}^{T} \mathbf{X})^{-1} - \boldsymbol{\beta} \, \boldsymbol{\beta}^{T}
+\\
+& = & (\mathbf{X}^{T} \mathbf{X})^{-1} \, \mathbf{X}^{T} \, \{ \mathbf{X} \, \boldsymbol{\beta} \, \boldsymbol{\beta}^{T} \,  \mathbf{X}^{T} + \sigma^2 \} \, \mathbf{X} \, (\mathbf{X}^{T} \mathbf{X})^{-1} - \boldsymbol{\beta} \, \boldsymbol{\beta}^{T}
+% \\
+% & = & (\mathbf{X}^T \mathbf{X})^{-1} \, \mathbf{X}^T \, \mathbf{X} \, \boldsymbol{\beta} \, \boldsymbol{\beta}^T \,  \mathbf{X}^T \, \mathbf{X} \, (\mathbf{X}^T % \mathbf{X})^{-1}
+% \\
+% & & + \, \, \sigma^2 \, (\mathbf{X}^T \mathbf{X})^{-1} \, \mathbf{X}^T  \, \mathbf{X} \, (\mathbf{X}^T \mathbf{X})^{-1} - \boldsymbol{\beta} \boldsymbol{\beta}^T
+\\
+& = & \boldsymbol{\beta} \, \boldsymbol{\beta}^{T}  + \sigma^2 \, (\mathbf{X}^{T} \mathbf{X})^{-1} - \boldsymbol{\beta} \, \boldsymbol{\beta}^{T}
+\, \, \, = \, \, \, \sigma^2 \, (\mathbf{X}^{T} \mathbf{X})^{-1}.
+\end{eqnarray*}
+From $\mbox{Var}(\boldsymbol{\beta}) = \sigma^2
+\, (\mathbf{X}^{T} \mathbf{X})^{-1}$, we obtain an estimate of the variance of the estimate of the $j-th$ regression coefficient:
+\begin{equation}
+    \boldsymbol{\sigma}^2 (\boldsymbol{\beta}_j ) = \boldsymbol{\sigma}^2 [(\mathbf{X}^{T} \mathbf{X})^{-1}]_{jj} 
+\end{equation}.
+
+\subsection{Derivation of Bias-Variance decomposition of MSE}\label{app:MSE_bias_var}
+Start with the expression for our data
+\begin{align*}
+    y = f(x) + \epsilon
+\end{align*}
+and the following quantities
+\begin{align*}
+    \text{Var}(\epsilon) &= E[\epsilon^2] - E[\epsilon]^2 = E[\epsilon^2] =  \sigma^2 \\
+    \text{E}[f] &= f \\ 
+    \text{Bias}[\hat f]^2 &= (f - E[\hat f])^2 \\
+    \text{E}[\epsilon] &= 0 \\
+    E[A + B] &= E[A] + E[B] \\
+    E[AB] &= E[A]E[B]
+\end{align*}
+Lets compute the MSE for our data, assuming we've made a model $\hat y$, (here we use $f = f(x)$ to simplify our writing)
+\begin{align*}
+    \text{MSE} &= E[(y-\hat y)^2] = E[(f + \epsilon - \hat y)^2] \\ 
+    &= E[(f - E[\hat y] + \epsilon + E[\hat y] - \hat y )^2] 
+\end{align*}
+Using the square theorem on this expression, and splitting the expectation value,  yields
+\begin{align*}
+    = E[(f-E[\hat y])^2] + E[\epsilon^2] + E[(E[\hat y] - \hat y)^2] + 2E[\epsilon]E[(f-E[\hat y])] \\ + 2E[\epsilon]E[E[\hat y]] - \hat y] + 2E[[E[\hat y] - \hat y ]E[(f-E[\hat y])]
+\end{align*}
+now we cancel all the terms that are zero, i.e $E[\epsilon] = 0$, and $E[E[\hat y]] = E[\hat y]$ (meaning, the final term is zero). Be mindful however, the term $E[(E[\hat y] - \hat y)^2]$ is non-zero, since this has a crossterm that do not cancel. Furthermore, the terms $E[(f-E[\hat y])] = (f - E[\hat y)$, since the argument is just a scaling by $EE[\hat y]$ of the initial function $f$, which we found had $E[f] = f$.
+Meaning we are left with the following,
+\begin{align*}
+   MSE =  (f - E[\hat y])^2 + E[\epsilon^2] + E[(E[\hat y] - \hat y)^2]
+\end{align*}
+And these three terms we recognise from our initial list of useful quantities, giving us the decomposition we desire
+\begin{align}\label{app:bias_variance_decomp}
+    \text{MSE} = \text{Bias}[\hat y]^2 + \sigma^2 + \text{Var}[\hat y]
+\end{align}
+\end{document}

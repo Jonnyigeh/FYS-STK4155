@@ -1,6 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import pandas as pd
+import seaborn as sns
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # from random import random, seed'
 
@@ -92,7 +96,7 @@ class GD():
         r2 = 1 - np.sum((Z.ravel() - Z_model) ** 2) / np.sum((Z.ravel() - Z_mean) **2)
         return r2
 
-    def PlainGD(self, eta = 0.01, eps = 10 ** (-8), lmbda = 0.001, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+    def PlainGD(self, eta = 0.01, eps = 10 ** (-8), lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
         """Performs linear regression using Plain Gradient Descent
 
         args:
@@ -109,7 +113,6 @@ class GD():
         beta0 = self.beta0
         DM = self.DM
         y = self.y.reshape(n,1)
-
         if method=="OLS":
             with np.printoptions(precision=3):
                 print(f"Performing OLS regression using PlainGD with initial values = " ,(*beta0))
@@ -126,38 +129,42 @@ class GD():
                 s = s / (1 - avg_time2)
                 i = 1
                 beta = beta0 - eta * m / (np.sqrt(s) + delta)
-
-                while np.linalg.norm(g) > eps:
+                mse = []
+                j = 0
+                while np.linalg.norm(g) > eps and j < 1000:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    j += 1
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
                     s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                    m = m / (1 - avg_time1 ** i)
-                    s = s / (1 - avg_time2 ** i)
+                    mhat = m / (1 - avg_time1 ** i)
+                    shat = s / (1 - avg_time2 ** i)
 
-                    beta -= eta * m / (np.sqrt(s) + delta)
+                    beta -= eta * mhat / (np.sqrt(shat) + delta)
                     m_prev = m
                     s_prev = s
-
-
-
-
             elif ADAGRAD:
-                grad = []
-                grad.append(2 / n * (DM.T @ (DM @ beta0 - y)))
+                gradC = []
+                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)))
                 delta = 1e-8
-                G = grad[0]@grad[0].T
-                beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
+                G = gradC[0]@gradC[0].T
+                dim1, dim2 = np.shape(G)
+                I = np.eye(dim1, dim2)
 
-                while np.linalg.norm(gradC) > eps:
-                    grad.append(2 / n * (DM.T @ (DM @ beta - y)))
-                    k = len(grad)
-                    G = sum(grad[i]@grad[i].T for i in range(k))
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape) * gradC[0]
+                mse = []
+                i = 0
+                while np.linalg.norm(gradC[-1]) > eps and i < 1000:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    i += 1
+                    gradC.append(2 / n * (DM.T @ (DM @ beta - y)))
+                    k = len(gradC)
+                    G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
 
-
+                    beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
             elif RMSprop:
                 avg_time = 0.9
                 delta = 1e-8
@@ -166,24 +173,31 @@ class GD():
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
                 s_prev = s
                 beta = beta0 - eta * g / np.sqrt(s + delta)
-
-                while np.linalg.norm(gradC) > eps:
+                mse = []
+                i = 0
+                while np.linalg.norm(g) > eps and i < 1000:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     beta -= eta * g / np.sqrt(s + delta)
                     s_prev = s
-
-
             else:
+
                 gradC = 2 / n * (DM.T @ (DM @ beta0 - y))
                 beta = beta0 - eta * gradC
-
-                while np.linalg.norm(gradC) > eps:
+                mse = []
+                i = 0
+                # while i > 100:
+                while np.linalg.norm(gradC) > eps and i < 1000:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    i += 1
                     gradC = 2 / n * (DM.T @ (DM @ beta - y))
                     beta -= eta * gradC
 
-            ref_beta = np.linalg.pinv(DM.T @ DM) @ DM.T @ y
 
+
+            # ref_beta = np.linalg.pinv(DM.T @ DM) @ DM.T @ y
 
         if method=="Ridge":
             if ADAM:
@@ -199,36 +213,42 @@ class GD():
                 s = s / (1 - avg_time2)
                 i = 1
                 beta = beta0 - eta * m / (np.sqrt(s) + delta)
+                mse = []
+                j = 0
 
-                while np.linalg.norm(g) > eps:
+                while np.linalg.norm(g) > eps and j < 1000:
+                    j += 1
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
                     s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                    m = m / (1 - avg_time1 ** i)
-                    s = s / (1 - avg_time2 ** i)
+                    mhat = m / (1 - avg_time1 ** i)
+                    shat = s / (1 - avg_time2 ** i)
 
-                    beta -= eta * m / (np.sqrt(s) + delta)
+                    beta -= eta * mhat / (np.sqrt(shat) + delta)
                     m_prev = m
                     s_prev = s
 
-
-
             elif ADAGRAD:
-                grad = []
-                grad.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
+                gradC = []
+                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta0)
                 delta = 1e-8
-                G = grad[0]@grad[0].T
-                beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
-
-                while np.linalg.norm(gradC) > eps:
-                    grad.append(2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta)
-                    k = len(grad)
-                    G = sum(grad[i]@grad[i].T for i in range(k))
+                G = gradC[0]@gradC[0].T
+                dim1, dim2 = np.shape(G)
+                I = np.eye(dim1, dim2)
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape) * gradC[0]
+                mse = []
+                i = 0
+                while np.linalg.norm(gradC[-1]) > eps and i < 1000:
+                    i += 1
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    gradC.append(2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta)
+                    k = len(gradC)
+                    G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
-
+                    beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
 
             elif RMSprop:
                 avg_time = 0.9
@@ -236,10 +256,13 @@ class GD():
                 s_prev = 0
                 g = 2 / n * (DM.T @ (DM @ beta0 - y))
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
-                beta -= eta * g / np.sqrt(s + delta)
-
-                while np.linalg.norm(gradC) > eps:
-                    g = 2 / n * (DM.T @ (DM @ beta - y))
+                beta = beta0 - eta * g / np.sqrt(s + delta)
+                mse = []
+                i = 0
+                while np.linalg.norm(g) > eps and i < 100:
+                    i += 1
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    g = 2 / n * (DM.T @ (DM @ beta0 - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     beta -= eta * g / np.sqrt(s + delta)
                     s_prev = s
@@ -253,20 +276,24 @@ class GD():
 
                 with np.printoptions(precision=3):
                     print(f"Performing Ridge regression using PlainGD with initial values = " ,(*beta0))
-                while np.linalg.norm(gradC) > eps:
+                mse = []
+                i = 0
+                while i < 1000:
+                #while np.linalg.norm(gradC) > eps and i < 1000:
+                    i += 1
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     gradC = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     beta -= eta * gradC
 
-            ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
-
+            # ref_beta = np.linalg.pinv(DM.T @ DM + lmbda * I ) @ DM.T @ y
 
         if check_equality:
             np.testing.assert_allclose(beta, ref_beta, rtol=1e-3, atol=1e-3)
 
+        return beta,mse
 
-        return beta
+    def MGD(self, eta = 0.01, eps = 10 ** (-8), gamma = 0.9, lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
 
-    def MGD(self, eta = 0.01, eps = 10 ** (-8), gamma = 0.9, lmbda = 0.001, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
         """Performs linear regression using Plain Gradient Descent with momentum
 
         args:
@@ -301,14 +328,17 @@ class GD():
                 s = s / (1 - avg_time2)
                 i = 1
                 beta = beta0 - eta * m / (np.sqrt(s) + delta)
-
-                while np.linalg.norm(g) > eps:
+                mse = []
+                j = 0
+                while np.linalg.norm(g) > eps and j < 100:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    j += 1
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
                     s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                    m = m / (1 - avg_time1 ** i)
-                    s = s / (1 - avg_time2 ** i)
+                    mhat = m / (1 - avg_time1 ** i)
+                    shat = s / (1 - avg_time2 ** i)
                     v = v_prev * gamma + eta * m / (np.sqrt(s) + delta)
                     beta -= v
                     v_prev = v
@@ -317,20 +347,25 @@ class GD():
 
 
             elif ADAGRAD:
-                grad = []
-                grad.append(2 / n * (DM.T @ (DM @ beta0 - y)))
+                gradC = []
+                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)))
                 delta = 1e-8
                 v_prev = 0
-                G = grad[0]@grad[0].T
-                beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
-
-                while np.linalg.norm(gradC) > eps:
-                    grad.append(2 / n * (DM.T @ (DM @ beta - y)))
-                    k = len(grad)
-                    G = sum(grad[i]@grad[i].T for i in range(k))
+                G = gradC[0]@gradC[0].T
+                dim1, dim2 = np.shape(G)
+                I = np.eye(dim1, dim2)
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape) * gradC[0]
+                mse = []
+                i = 0
+                while np.linalg.norm(gradC[-1]) > eps and i < 100:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    i += 1
+                    gradC.append(2 / n * (DM.T @ (DM @ beta - y)))
+                    k = len(gradC)
+                    G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    v = gamma * v_prev + eta * 1 / np.sqrt(np.diag(G + delta * I))
+                    v = gamma * v_prev + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
                     beta -= v
                     v_prev = v
 
@@ -343,8 +378,11 @@ class GD():
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
                 s_prev = s
                 beta = beta0 - eta * g / np.sqrt(s + delta)
-
-                while np.linalg.norm(gradC) > eps:
+                mse = []
+                i = 0
+                while np.linalg.norm(g) > eps and i < 100:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     v = gamma * v_prev + eta * g / np.sqrt(s + delta)
@@ -358,12 +396,16 @@ class GD():
                 gradC = 2 / n * (DM.T @ (DM @ beta0 - y))
                 v_prev = 0
                 beta = beta0 - eta * gradC
-
-                while np.linalg.norm(gradC) > eps:
+                mse = []
+                i = 0
+                while np.linalg.norm(gradC) > eps and i < 100:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    i += 1
                     gradC = 2 / n * (DM.T @ (DM @ beta - y))
                     v = v_prev * gamma + eta * gradC
                     beta -= v
                     v_prev = v
+                print(f"MSE momentum: {mse}")
 
             ref_beta = np.linalg.pinv(DM.T @ DM) @ DM.T @ y
 
@@ -383,37 +425,42 @@ class GD():
                 s = s / (1 - avg_time2)
                 i = 1
                 beta = beta0 - eta * m / (np.sqrt(s) + delta)
-
-                while np.linalg.norm(g) > eps:
+                mse = []
+                j = 0
+                while np.linalg.norm(g) > eps and j < 100:
+                    mse.append(self.MSE(self.y,self.DM@beta))
                     i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     m = avg_time1 * m_prev + (1 - avg_time1) * g
                     s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                    m = m / (1 - avg_time1 ** i)
-                    s = s / (1 - avg_time2 ** i)
-                    v = gamma * v_prev + eta * m / (np.sqrt(s) + delta)
+                    mhat = m / (1 - avg_time1 ** i)
+                    shat = s / (1 - avg_time2 ** i)
+                    v = gamma * v_prev + eta * mhat / (np.sqrt(shat) + delta)
                     beta -= v
                     m_prev = m
                     s_prev = s
                     v_prev = v
 
-
-
             elif ADAGRAD:
-                grad = []
-                grad.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
+                gradC = []
+                gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta0)
                 delta = 1e-8
-                G = grad[0]@grad[0].T
+                G = gradC[0]@gradC[0].T
                 v_prev = 0
-                beta = beta0 - eta * 1 / np.sqrt(np.diag(G + delta * I))
-
-                while np.linalg.norm(gradC) > eps:
-                    grad.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
-                    k = len(grad)
-                    G = sum(grad[i]@grad[i].T for i in range(k))
+                dim1, dim2 = np.shape(G)
+                I = np.eye(dim1, dim2)
+                beta = beta0 - (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta0.shape) * gradC[0]
+                mse = []
+                i = 0
+                while np.linalg.norm(gradC[-1]) > eps and i < 100:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    i += 1
+                    gradC.append(2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta)
+                    k = len(gradC)
+                    G = sum(gradC[i]@gradC[i].T for i in range(k))
                     dim1, dim2 = np.shape(G)
                     I = np.eye(dim1, dim2)
-                    v = gamma * v_prev + eta * 1 / np.sqrt(np.diag(G + delta * I))
+                    v = gamma * v_prev + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
                     beta -= v
                     v_prev = v
 
@@ -424,9 +471,12 @@ class GD():
                 v_prev = 0
                 g = 2 / n * (DM.T @ (DM @ beta0 - y))
                 s = avg_time * s_prev + (1 - avg_time) * g ** 2
-                beta -= eta * g / np.sqrt(s + delta)
-
-                while np.linalg.norm(gradC) > eps:
+                beta = beta0 - eta * g / np.sqrt(s + delta)
+                mse = []
+                i = 0
+                while np.linalg.norm(g) > eps and i < 100:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    i += 1
                     g = 2 / n * (DM.T @ (DM @ beta - y))
                     s = avg_time * s_prev + (1 - avg_time) * g ** 2
                     v = gamma * v_prev + eta * g / np.sqrt(s + delta)
@@ -444,8 +494,12 @@ class GD():
                 gradC = 2 / n * (DM.T @ (DM @ beta0 - y)) + 2 * lmbda * beta0
                 beta = beta0 - eta * gradC
                 v_prev = 0
-
-                while np.linalg.norm(gradC) > eps:
+                mse = []
+                i = 0
+                while i < 1000:
+                #while np.linalg.norm(gradC) > eps and i < 1000:
+                    mse.append(self.MSE(self.y,self.DM@beta))
+                    i += 1
                     gradC = 2 / n * (DM.T @ (DM @ beta - y)) + 2 * lmbda * beta
                     v = v_prev * gamma + eta * gradC
                     beta -= v
@@ -454,19 +508,21 @@ class GD():
 
 
 
-            ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
+            # ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
 
         if check_equality:
             np.testing.assert_allclose(beta, ref_beta, rtol=1e-3, atol=1e-3)
 
 
-        return beta
+        return beta,mse
 
-    def SGD(self, M = 50, n_epochs = 100, lmbda = 0.001, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+    def SGD(self,eta =0.01, M = 10, n_epochs = 100, lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+
         """Performs linear regression using Stochastic Gradient Descent
                     using tunable learning rate. (see function *learning rate*)
 
         args:
+            eta               (float): Learning rate
             M                 (int)  : Size of minibatches
             n_epochs          (int)  : Number of epochs (iterations of all minibatches)
             lmbda             (float): Ridge parameter lambda
@@ -498,10 +554,14 @@ class GD():
                 m_prev = 0
                 s_prev = 0
                 t = 0
+                mse = []
+                j = 0
 
                 for epoch in range(n_epochs):
                     for i in range(m_):
                         t += 1
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -509,37 +569,45 @@ class GD():
                         g = 2 / M * (DMi.T @ (DMi @ beta - yi))
                         m = avg_time1 * m_prev + (1 - avg_time1) * g
                         s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                        m = m / (1 - avg_time1 ** t)
-                        s = s / (1 - avg_time2 ** t)
+                        mhat = m / (1 - avg_time1 ** t)
+                        shat = s / (1 - avg_time2 ** t)
 
-                        beta -= eta * m / (np.sqrt(s) + delta)
+                        beta -= eta * mhat / (np.sqrt(shat) + delta)
                         m_prev = m
                         s_prev = s
 
 
             elif ADAGRAD:
-                grad = []
+                gradC = []
                 delta = 1e-8
+                mse= []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j+=1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
                         yi = y[k*M:k*M + M]
-                        grad.append(2 / M * (DMi.T @ (DMi @ beta - yi)))
-                        k = len(grad)
-                        G = sum(grad[j]@grad[j].T for j in range(k))
+                        gradC.append(2 / M * (DMi.T @ (DMi @ beta - yi)))
+                        k = len(gradC)
+                        G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
+                        beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
 
 
             elif RMSprop:
                 avg_time = 0.9
                 delta = 1e-8
                 s_prev = 0
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j+=1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -550,8 +618,12 @@ class GD():
                         s_prev = s
 
             else:
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j+=1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -562,7 +634,6 @@ class GD():
             if check_equality:
                 ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
                 np.testing.assert_allclose(beta, ref_beta, rtol=1e-3, atol=1e-3)
-
 
         if method=="Ridge":
             with np.printoptions(precision=3):
@@ -575,9 +646,13 @@ class GD():
                 m_prev = 0
                 s_prev = 0
                 t = 0
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
                         t += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -585,38 +660,43 @@ class GD():
                         g = 2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta
                         m = avg_time1 * m_prev + (1 - avg_time1) * g
                         s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                        m = m / (1 - avg_time1 ** t)
-                        s = s / (1 - avg_time2 ** t)
+                        mhat = m / (1 - avg_time1 ** t)
+                        shat = s / (1 - avg_time2 ** t)
 
-                        beta -= eta * m / (np.sqrt(s) + delta)
+                        beta -= eta * mhat / (np.sqrt(shat) + delta)
                         m_prev = m
                         s_prev = s
 
-
             elif ADAGRAD:
-                grad = []
+                gradC = []
                 delta = 1e-8
+                mse= []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
                         yi = y[k*M:k*M + M]
-                        grad.append(2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta)
-                        k = len(grad)
-                        G = sum(grad[j]@grad[j].T for j in range(k))
+                        gradC.append(2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta)
+                        k = len(gradC)
+                        G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        beta -= eta * 1 / np.sqrt(np.diag(G + delta * I))
-
-
+                        beta -= (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
+                        mse.append(self.MSE(self.y,self.DM@beta))
 
             elif RMSprop:
                 avg_time = 0.9
                 delta = 1e-8
                 s_prev = 0
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -625,11 +705,14 @@ class GD():
                         s = avg_time * s_prev + (1 - avg_time) * g ** 2
                         beta -= eta * g / np.sqrt(s + delta)
                         s_prev = s
-
-
+                        mse.append(self.MSE(self.y,self.DM@beta))
             else:
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)              # Remove the upper m, since we add k*M + M meaning it'd crash
                                                                 # if we by chance choose k = max(m)
                         eta = learning_rate(epoch * m_ + i)
@@ -642,18 +725,21 @@ class GD():
                         beta -= eta * gradC
 
 
+
             if check_equality:
-                XT_X = DM.T @ DM
-                ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
+                # XT_X = DM.T @ DM
+                # ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
                 np.testing.assert_allclose(beta, ref_beta, rtol=1e-3, atol=1e-3)
 
-        return beta
+        return beta,mse
 
-    def SMGD(self, M = 50, n_epochs = 100, gamma=0.9, lmbda = 0.001, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
+    def SMGD(self,eta=0.01, M = 10, n_epochs = 100, gamma=0.9, lmbda = 0.1, method= "OLS", RMSprop=False, ADAGRAD=False, ADAM=False, check_equality = False):
         """Performs linear regression using Stochastic Gradient Descent with momentum
                 and a tunable learning rate. (see function learning rate).
 
         args:
+
+            eta               (float): Learning rate
             gamma             (float): Momentum parameter
             M                 (int)  : Size of minibatches
             n_epochs          (int)  : Number of epochs (iterations of all minibatches)
@@ -689,8 +775,12 @@ class GD():
                 m_prev = 0
                 s_prev = 0
                 t = 0
+                mse =[]
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         t += 1
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
@@ -699,10 +789,10 @@ class GD():
                         g = 2 / M * (DMi.T @ (DMi @ beta - yi))
                         m = avg_time1 * m_prev + (1 - avg_time1) * g
                         s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                        m = m / (1 - avg_time1 ** t)
-                        s = s / (1 - avg_time2 ** t)
+                        mhat = m / (1 - avg_time1 ** t)
+                        shat = s / (1 - avg_time2 ** t)
 
-                        v = v_prev * gamma + eta * m / (np.sqrt(s) + delta)
+                        v = v_prev * gamma + eta * mhat / (np.sqrt(shat) + delta)
                         beta -= v
                         m_prev = m
                         s_prev = s
@@ -710,20 +800,24 @@ class GD():
 
 
             elif ADAGRAD:
-                grad = []
+                gradC = []
                 delta = 1e-8
+                mse =[]
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
                         yi = y[k*M:k*M + M]
-                        grad.append(2 / M * (DMi.T @ (DMi @ beta - yi)))
-                        k = len(grad)
-                        G = sum(grad[j]@grad[j].T for j in range(k))
+                        gradC.append(2 / M * (DMi.T @ (DMi @ beta - yi)))
+                        k = len(gradC)
+                        G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        v = v_prev * gamma + eta * 1 / np.sqrt(np.diag(G + delta * I))
+                        v = v_prev * gamma + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
                         beta -= v
 
 
@@ -733,8 +827,12 @@ class GD():
                 avg_time = 0.9
                 delta = 1e-8
                 s_prev = 0
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
@@ -747,8 +845,12 @@ class GD():
                         s_prev = s
 
             else:
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch*m_ + i)
                         DMi = DM[k*M:k*M + M]
@@ -777,8 +879,11 @@ class GD():
                 m_prev = 0
                 s_prev = 0
                 t = 0
+                mse =[]
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
                         t += 1
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
@@ -787,39 +892,44 @@ class GD():
                         g = 2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta
                         m = avg_time1 * m_prev + (1 - avg_time1) * g
                         s = avg_time2 * s_prev + (1 - avg_time2) * g **2
-                        m = m / (1 - avg_time1 ** t)
-                        s = s / (1 - avg_time2 ** t)
-                        v = v_prev * gamma + eta * m / (np.sqrt(s) + delta)
+                        mhat = m / (1 - avg_time1 ** t)
+                        shat = s / (1 - avg_time2 ** t)
+                        v = v_prev * gamma + eta * mhat / (np.sqrt(shat) + delta)
                         beta -= v
                         m_prev = m
                         s_prev = s
                         v_prev = v
-
+                        mse.append(self.MSE(self.y,self.DM@beta))
 
 
             elif ADAGRAD:
-                grad = []
+                gradC = []
                 delta = 1e-8
+                mse =[]
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
                         k = np.random.randint(m_-1)
                         eta = learning_rate(epoch * m_ + i)         # the addition of i in the function call means that the learning
                         DMi = DM[k*M:k*M + M]                      # rate is not constant through the minibatch, but decays somewhat.
                         yi = y[k*M:k*M + M]
-                        grad.append(2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta)
-                        k = len(grad)
-                        G = sum(grad[j]@grad[j].T for j in range(k))
+                        gradC.append(2 / M * (DMi.T @ (DMi @ beta - yi)) + 2 * lmbda * beta)
+                        k = len(gradC)
+                        G = sum(gradC[j]@gradC[j].T for j in range(k))
                         dim1, dim2 = np.shape(G)
                         I = np.eye(dim1, dim2)
-                        v = v_prev * gamma + eta * 1 / np.sqrt(np.diag(G + delta * I))
+                        v = v_prev * gamma + (eta * 1 / np.sqrt(np.diag(G + delta * I))).reshape(*beta.shape) * gradC[-1]
                         beta -= v
                         v_prev = v
+                        mse.append(self.MSE(self.y,self.DM@beta))
 
 
             elif RMSprop:
                 avg_time = 0.9
                 delta = 1e-8
                 s_prev = 0
+                mse = []
+                j =0
                 for epoch in range(n_epochs):
                     for i in range(m_):
                         k = np.random.randint(m_-1)
@@ -832,11 +942,16 @@ class GD():
                         beta -= v
                         v_prev =  v
                         s_prev = s
+                        mse.append(self.MSE(self.y,self.DM@beta))
 
 
             else:
+                mse = []
+                j = 0
                 for epoch in range(n_epochs):
                     for i in range(m_):
+                        j += 1
+                        mse.append(self.MSE(self.y,self.DM@beta))
                         k = np.random.randint(m_-1)              # Remove the upper m, since we add k*M + M meaning it'd crash
                                                                 # if we by chance choose k = max(m)
                         eta = learning_rate(epoch*m_ + i)
@@ -851,26 +966,78 @@ class GD():
 
 
 
-
             if check_equality:
                 XT_X = DM.T @ DM
                 ref_beta = np.linalg.pinv(XT_X + lmbda * I ) @ DM.T @ y
                 np.testing.assert_allclose(beta, ref_beta, rtol=1e-3, atol=1e-3)
 
-        return beta
+        return beta,mse
 
 
 if __name__ == "__main__":
+    sns.set_theme()
     np.random.seed(2001)
-    x = np.linspace(0,1,1000)
+    x = np.linspace(0,1,100)
     inst = GD(x, 2)
-    ols_beta1 = inst.PlainGD()
-    ols_beta2 = inst.MGD()
-    ridge_beta1 = inst.PlainGD(method="Ridge")
-    ridge_beta2 = inst.MGD(method="Ridge")
-    ols_beta3 = inst.SGD()
-    ridge_beta3 = inst.SGD(method="Ridge")
-    ols_beta4 = inst.SMGD()
-    ridge_beta4 = inst.SMGD(method="Ridge")
-    lrates = [""]
-    breakpoint()
+    x = np.linspace(0,1000,1000)
+    designmatrix = inst.DM
+    ydata = inst.y
+
+
+
+if False:    # RIDGE values
+
+    ridge_beta1,mse_PlainGD        = inst.PlainGD(method="Ridge")
+    ridge_beta2,mse_MGD            = inst.MGD(method="Ridge")
+    ridge_beta3,mse_SGD            = inst.SGD(method="Ridge")
+    ridge_beta4,mse_SMGD           = inst.SMGD(method="Ridge")
+if False:   # RIDGE models
+    model1_RIDGE = designmatrix @ ridge_beta1
+    mse1_ols = inst.MSE(ydata, model1_ols)
+    model2_RIDGE = designmatrix @ ridge_beta2
+    mse2_ols = inst.MSE(ydata,model2_ols)
+    model3_RIDGE = designmatrix @ ridge_beta3
+    mse3_ols = inst.MSE(ydata,model3_ols)
+    model4_RIDGE = designmatrix @ ridge_beta4
+    mse4_ols = inst.MSE(ydata,model4_ols)
+if False: # This code prints out all MSE for various eta values for different lmbda values ranging from [1E-1 - 1E-6]
+    lmbdaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+    mse_1 = np.zeros(len(lmbdaa))
+    for i, lmbda_ in enumerate(lmbdaa):
+        beta, mse= inst.PlainGD(eta=0.1,lmbda=lmbda_, method="Ridge")
+        mse_1[i] = inst.MSE(ydata,designmatrix@beta)
+
+    print(f"MSE of different lambda values[eta=0.01]: {mse_1}")
+
+
+
+
+if False:# This code prints out all MSE for various lmbda values for different eta values ranging from [1E-1 - 1E-6]
+        etaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+        mse_2 = np.zeros(len(etaa))
+        for i, etaaa in enumerate(etaa):
+            beta,mse = inst.PlainGD(eta =etaaa,lmbda=0.1,method="Ridge")
+            mse_2[i] = inst.MSE(ydata,designmatrix@beta)
+        print(f"MSE of different eta values[lmbda=0.01]: {mse_2}")
+
+if True: #Heatmap for mse, lmbda and eta
+    lmbdaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+    etaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+    mse_1 = np.zeros((len(lmbdaa), len(etaa)))
+    for i, lmbda_ in enumerate(lmbdaa):
+        for j, etaaa in enumerate(etaa):
+            beta,mse = inst.PlainGD(eta =etaaa,lmbda=lmbda_,method="Ridge")
+            mse_1[i][j] = inst.MSE(ydata,designmatrix@beta)
+    maxvalue_1 = np.max(mse_1)
+    #Creating dataframe
+    df1 = pd.DataFrame(data=mse_1[:,:],
+                        index= etaa,
+                         columns= lmbdaa)
+
+    #Plotting heatmap for Optimal lambda and eta
+    sns.heatmap(df1,annot=True,fmt='.2g')
+    plt.title("Optimal hyperparamteres $\lambda$ and $\eta$")
+    plt.xlabel("Learning rate $\eta$")
+    plt.ylabel("Ridge parameter $\lambda$")
+    plt.savefig("/Users/fuaddadvar/fys-STK4155/partA/Heatmap_MSE_lmbda_eta.pdf")
+    plt.show()

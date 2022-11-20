@@ -1,0 +1,86 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}   % Images
+\usepackage{subfiles}   % Include subfiles
+\usepackage{hyperref}   % Nice referencing with clickable links
+\usepackage{amsmath}    % Math
+
+\usepackage[style=ieee]{biblatex}   % Citations
+\usepackage{biblatex}
+\addbibresource{ref.bib}
+
+\usepackage{fvextra}
+\usepackage{csquotes}   % Honestly no idea what this does...
+\usepackage{minted}
+\usepackage{comment}
+\usepackage{amssymb}
+%\usepackage[parfill]{parskip}
+\usepackage{pythonhighlight}
+\usepackage{gensymb}
+\DeclareMathOperator*{\E}{\mathbb{E}}
+\usepackage{cleveref}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\usepackage[toc,title]{appendix}
+\renewcommand{\qedsymbol}{\rule{0.7em}{0.7em}}
+\lstset{ %
+	inputpath=,
+	backgroundcolor=\color{white!88!black},
+	basicstyle={\ttfamily\scriptsize},
+	commentstyle=\color{magenta},
+	language=Python,
+	morekeywords={True,False},
+	tabsize=4,
+	stringstyle=\color{green!55!black},
+	frame=single,
+	keywordstyle=\color{blue},
+	showstringspaces=false,
+	columns=fullflexible,
+	keepspaces=true}
+
+
+%\setlength{\parindent}{0pt}
+
+\title{\LARGE Modelling 2D terrain data by Linear regression: An introduction to simple machine learning}
+\author{ Jonny Aarstad Igeh | Fuad Dadvar\\
+  \small Department of Physics, University of Oslo, Norway\\
+  \small \href{https://github.uio.no/Jonnyai/FYS-STK4155}{Github address: Link here}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\subfile{section/1_abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+\subfile{section/2_introduction}
+
+\subfile{section/3_method_and_theory}
+
+
+\subfile{section/4_results}
+
+\subfile{section/5_discussion}
+
+\subfile{section/6_conclusion}
+
+\printbibliography
+\clearpage
+\appendix
+\subfile{section/7_appendix}
+
+%\bibliographystyle{apalike}
+%\bibliographystyle{plainnat}
+%\bibliography{references1}
+
+\end{document}

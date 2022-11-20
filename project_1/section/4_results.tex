@@ -1,0 +1,191 @@
+\documentclass[../main.tex]{subfiles}
+
+\begin{document}
+\newpage
+\section{Results}
+\subsection{Ordinary Least Squares}
+
+Using the methods presented in the previous section \ref{method_and_theory}, we make a polynomial fit of the Franke Function. We choose $N = 50$, where $N$ is the number of datapoints in the axises $x,y \in [0,1]$, and a $\sigma^2=0.15$ to produce noise (gaussian distribution), unless otherwise specified. Figure \eqref{fig:franke_5th_poly}) illustrates how this polynomial fit looks compared to the noisy data from the franke function.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=5in]{Project template/figs/Franke_5deg_approx.png}
+    \caption{Comparison of our noisy data, and our 5th order polynomial model using OLS}
+    \label{fig:franke_5th_poly}
+\end{figure}
+\vskip0.1in
+\begin{flushleft}
+When dealing with a two-dimensional polynomial fit it is rather difficult to assess a model. We implement our methods (\ref{refmethod: MSE}) MSE and (\ref{refmethod:R2}) R$^2$ score function to help us assess that model.
+\end{flushleft}
+
+\newpage
+\subsubsection{MSE and R$^2$}
+By following the implementation of the given method in subsection(\ref{refmethod: MSE}) and subsection (\ref{refmethod:R2}),  using $N = 50$ data points we produce values for the MSE and R2 score function, which we've plotted against each other for rising degrees of polynomials. This is shown in figure(\ref{fig:MSE_MSEtrain_R2_score})
+\begin{figure}[H]
+\hspace*{-1in}
+\subfloat[]{\includegraphics[width = 3.5in]{Project template/figs/task_b/MSE_MSEtrain_R2_plot.pdf}} 
+\subfloat[]{\includegraphics[width = 3.5in]{Project template/figs/task_c/MSE_comp_test_train.pdf}}
+
+\caption{This figure shows MSE$_\text{testdata}$, MSE$_\text{train}$ and R$^2$ score as a function of the model complexity, for polynomials up to the degree of 5th order. Figure(b) illustrates a closer look at the comparison between train and test data of mean squared error as funtion of model complexity.}
+\label{fig:MSE_MSEtrain_R2_score}
+\end{figure}
+
+
+
+
+\newpage
+\subsubsection{Variance of parameter $\beta$}
+Another interesting quantity we want to study to assess our model is how much variance is in our parameters $\beta$. We do this by using NumPys variance function \footnote{See documentation: \url{https://numpy.org/doc/stable/reference/generated/numpy.var.html}}, and illustrate this by 2 different order of polynomials as seen in the following plots shown in figure (\ref{fig: Variance_parameter_beta}). 
+%By deriving the variance of parameter $\beta$(\ref{app:variance_beta}) and by just simply implementing a numpy function np.variancewe can calculate the variance in each parameters $\beta_i$ and generate the following plots shown in figure(\ref{fig: Variance_parameter_beta}). 
+\begin{figure}[H]
+\centering{Variance of parameter $\beta$}
+\hspace*{-0.55in}
+\subfloat[]{\includegraphics[width = 2.9in]{Project template/figs/task_b/Beta_var_deg_3.pdf}} 
+\subfloat[]{\includegraphics[width = 2.9in]{Project template/figs/task_b/Beta_var_deg_5.pdf}}
+
+\caption{
+In this figure we present the variance of the parameters $\beta_i$. Note we've normalized both the $\beta_i$'s and the variance. Here the i'th order terms corresponds to the higher order terms in the two-dimensional polynomial (i.e $xy$, $x^2y$, $xy^2$ etc), and we illustrate the for 2 given polynomials of degree 3 and 5 respectively.
+}
+\label{fig: Variance_parameter_beta}
+\end{figure}
+\newpage
+\subsubsection{Bias-variance tradeoff}
+
+
+We use the bootstrap method introduced in section \eqref{refmethod:Bias_variance_tradeoff}, we obtain values for MSE, Bias and variance for our OLS model. As seen in \eqref{app:bias_variance_decomp} these 3 values are closely linked, and we plot these together to study the bias-variance tradeoff to our method. We included polynomial degree up to 25th order to illustrate better this tradeoff, and we ran with 15 bootstrap iterations. The resulting graphs are shown in figure(\ref{fig: bias_variance_tradeoff_N30_N50}) 
+\begin{figure}[H]
+\hspace*{-0.5in}
+\subfloat[]{\includegraphics[width = 3in]{Project template/figs/task_c/bias_var_15boot_n30_seed2001.pdf}} 
+\subfloat[]{\includegraphics[width = 3in]{Project template/figs/task_c/bias_var_15boot_n50_seed2001.pdf}}
+\caption{This figure shows us the bias-variance tradeoff as function of complexity, where complexity represents the order of the polynomial fit. In this figure we consider $N = 30$ and $N=50$ respectively.}
+\label{fig: bias_variance_tradeoff_N30_N50}
+\end{figure}
+
+\clearpage
+\subsubsection{Cross validation vs Bootstrap}\label{res:cv vs bs ols}
+By using the two different methods of resampling, cross validation \eqref{refmethod: crossvalidation} and bootstrap \eqref{refmethod: bootstrap}, we obtain unique estimates for the MSE. In the crossvalidation we run the resampling method for various number of folds (5, 10 and 15) - and we run for a set number of bootstrap iterations (25). This is done for various degrees of complexity in our model. By implementing the code(\ref{code:bootstrap}) presented in section (\ref{refmethod: crossvalidation}) we plot the MSE estimates as a function of polynomial degree, as illustrated in figure \eqref{fig:CV_MSE_kFOLD_N50}
+\vskip0.1in
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=5in]{Project template/figs/task_d/MSE_CV_boot25_n50.pdf}
+    \caption{This figure shows MSE as a function of model complexity up to $5th$ polynomial order. We evaluate a comparison between kfold cross validation and bootstrap. Where in this figure we estimate kfold $= [5, 10, 15]$. }
+    \label{fig:CV_MSE_kFOLD_N50}
+\end{figure}
+\vskip2in
+\begin{flushleft}
+
+\subsection{Ridge regression}\label{res:Ridge}
+We are now doing many of the same steps as we did for the ordinary least squares, but on the method of Ridge Regression. We implemented the code presented in section \eqref{refmethod:RIDGE} and choose a $\lambda$ interval on the logarithmic scale of [-3,1]. We are still using $N=50$
+\subsubsection{Bias-variance tradeoff with RIDGE}
+By implementing Ridge Regression method, we produce the bias-variance tradeoff as we did for OLS. We choose 3 arbitrary $\lambda$ values within the range $\lambda \in \text{log}([-3,1])$ to perform the Ridge regression, and we study how the bias-variance change with increasing $\lambda$. The results are presented in figure \eqref{fig: Bias_Variance_RIDGE}
+
+% We use the method that is shown in code(\ref{code:RIDGE}) and and our estimations uses $3$ randomly selected $\lambda$ values  which gives us the following results in figure(\ref{}) 
+
+\begin{figure}[H]
+\hspace*{-0.2in}
+\subfloat[]{\includegraphics[width = 2.5in]{Project template/figs/task_e/Bias_var_n30_boot15_ridge.pdf}} 
+\subfloat[]{\includegraphics[width = 2.5in]{Project template/figs/task_e/Bias_var_n30_boot15_ridge_lmb016.pdf}}\\
+\hspace*{1in}
+\subfloat[]{\includegraphics[width = 2.5in]{Project template/figs/task_e/Bias_var_n30_boot15_ridge_lmb27.pdf}} 
+
+\caption{Figure (a), (b) and (c) shows error estimations as function of model complexity, where model complexity is presented as $ith-$ polynomial order. We use three different $\lambda$ values for each subplot, where we have $\lambda = 0.000359$,$\lambda = 0.016681$ and $\lambda = 2.782559$ for each subplot.}
+\label{fig: Bias_Variance_RIDGE}
+\end{figure}
+
+
+
+
+
+
+\newpage
+\subsubsection{Cross validation vs Bootstrap with RIDGE}\label{res:cv bs ridge}
+Now we'd like to compare the two different resampling methods as we did  for OLS (see section \eqref{res:cv vs bs ols}). We run for the same number of k-folds and the same amount of bootstrap iterations, still on $N=50$. Doing so produces the following plot
+\begin{figure}[H]
+\hspace*{-0.6in}
+\subfloat[]{\includegraphics[width = 3in]{Project template/figs/task_e/polydeg3_MSE_comparison_boot_cv.pdf}} 
+\subfloat[]{\includegraphics[width = 3in]{Project template/figs/task_e/polydeg5_MSE_comparison_boot_cv.pdf}}\\
+\hspace*{0.9in}
+\subfloat[]{\includegraphics[width = 3in]{Project template/figs/task_e/polydeg10_MSE_comparison_boot_cv.pdf}} 
+
+\caption{ Figure (a),(b) and (c) shows MSE as a function of $log10(\lambda)$, where we have that the x-axis is a logarithmic range of lambda values. We illustrate a comparison between kfold crossvalidation vs bootstrap, where we implement kfold to range [3, 10, 15] for a 3rd, 5th and 10th order polynomial.}
+\label{fig: CV_Bootstrap_RIDGE}
+\end{figure}
+\end{flushleft}
+
+
+
+
+
+
+\begin{flushleft}
+\newpage
+\subsection{LASSO: Least absolute shrinkage and selection operator regression}
+Now we are doing the same analysis as in section \eqref{res:Ridge} for the method of Lasso regression that we presented in sectino \eqref{refmethod:LASSO}. Again we are using the same spectrum for the $\lambda$ values.
+
+\subsubsection{Bias-variance tradeoff with LASSO}
+We do the same bias-variance analysis using bootstrap with 25 iterations, as seen previously, but this time using the linear model produced by LASSO regression. The results (for the same values of $\lambda$) are presented in figure \eqref{fig: Bias_variance_LASSO}
+\begin{figure}[H]
+\hspace*{-0.2in}
+\subfloat[]{\includegraphics[width = 2.5in]{Project template/figs/task_f/Bias_var_n30_boot15_lasso_lmb000359.pdf}} 
+\subfloat[]{\includegraphics[width = 2.5in]{Project template/figs/task_f/Bias_var_n30_boot15_lasso_lmb016.pdf}}\\
+\hspace*{1.05in}
+\subfloat[]{\includegraphics[width = 2.5in]{Project template/figs/task_f/Bias_var_n30_boot15_lasso_lmb27.pdf}} 
+\caption{Figure (a), (b) and (c) shows Error estimation as a function of model complexity, where model complexity tells us the i'th order of polynomial degree. There is a variation in $\lambda$ values for each subplot as shown, where we have $\lambda = 0.000359$,$\lambda = 0.016681$ and $\lambda = 2.782559$ for each subplot.}
+\label{fig: Bias_variance_LASSO}
+\end{figure}
+
+\newpage
+\subsubsection{Cross validation vs bootstrap with LASSO}
+Again, we are to study the effect of the two resampling methods also for the LASSO regression. We perform the same analysis as in section \eqref{res:cv vs bs ols} and \eqref{res:cv bs ridge}, and the results are presented in figure \eqref{fig: CV_Bootstrap_LASSO}
+\begin{figure}[H]
+\hspace*{-0.6in}
+\subfloat[]{\includegraphics[width = 3in]{Project template/figs/task_f/polydeg3_MSE_comp_boot25_n50_cv_lasso.pdf}} 
+\subfloat[]{\includegraphics[width = 3in]{Project template/figs/task_f/polydeg5_MSE_comp_boot25_n50_cv_lasso.pdf}}\\
+\hspace*{0.9in}
+\subfloat[]{\includegraphics[width = 3in]{Project template/figs/task_f/polydeg10_MSE_comp_boot25_n50_cv_lasso.pdf}} 
+\caption{Figure (a),(b) and (c) shows MSE as a function of $log10(\lambda)$, where we have that the x-axis is a logarithmic range of lambda values. We illustrate a comparison between kfold crossvalidation vs bootstrap, where we implement kfold to range [3, 10, 15] for a 3rd, 5th and 10th order polynomial.}
+\label{fig: CV_Bootstrap_LASSO}
+\end{figure}
+
+\subsection{Analysis of real terrain data: Stavanger}
+As mentioned in the method section, we are to test our numerical model on a real data set. We will use all three methods, OLS, ridge and lasso - and use the cross validation resampling method with $k=10$ number of folds. We attempt in this section to fit a 5th order polynomial to the terrain data, and we calculate the MSE to evaluate the model fit. To ease the computational load we run with a smaller subset of lambdas, in the region $\lambda\in\text{log}_10[-2,1]$. Doing so produces the following graph of the MSE as a function of $\lambda$
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.6]{Project template/figs/task_g/real_data_MSE.pdf}
+    \caption{MSE for the two models: Ridge and Lasso as functions of $\lambda$}
+    \label{fig:realdataanalysis}
+\end{figure} \\ 
+To evaluate which model works best for our new terrain data, we find the lowest value for MSE and compare this for the three models, as presented in table \eqref{tab:realdata}
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{c|c|c}
+        \textbf{Reg.method} & \textbf{MSE} & \lambda \\\hline
+        OLS & 71300 & NaN\\
+        Ridge & 53000 & -0.9286\\
+        Lasso & 52000 & -0.0714
+    \end{tabular}
+    \caption{Table of smallest MSE values for the various regression models}
+    \label{tab:realdata}
+\end{table}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{flushleft}
+\end{document}
