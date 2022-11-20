@@ -1,8 +1,8 @@
-## Readme file for instruction to run various algorithms in project 2: FYS-STK4155
+## Readme file for instruction to run various algorithms in project 2: FYS-STK4155 and to reproduce the presented results
 
 
 ### Rate_of_conv_SGD.py
-- Run the code (a snippet from _part A kode_) to simply produce the graphs presented in result section.
+- Run the code (a snippet from GD_methods_class) to simply produce the graphs presented in result section.
 
 ### FFNN.py
 Class module for the feed-forward neural network. 
