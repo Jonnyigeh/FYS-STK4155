@@ -14,7 +14,7 @@ Class module for the feed-forward neural network.
 ### Layer.py
 Class module for the layers in the NeuralNetwork class. Holds attributes for weights, biases, output etc. Does not need to be run, will be imported into the relevant scripts (classifier etc.)
 
-### Gradient_methods.py
+### GD_methods_class.py
 
 Class module for gradient descent and all its varying methods inside the class module. 
 - Run the code in if name block and set each if statement to True if you want to run for each result, which is also commented in the code. 
