@@ -17,5 +17,5 @@ Class module for the layers in the NeuralNetwork class. Holds attributes for wei
 
 Class module for gradient descent and all its varying methods inside the class module. 
 - Run the code in if__name__=="__main__": and set each if statement to True if you want to run for each result, which is also commented in the code. 
-- Set given if statement to True RIDGE values to run either if statement for MSE each method or heatmap plot.
+- Set given if statement to True RIDGE values to run either if statement for MSE of each method or heatmap plot.
 
