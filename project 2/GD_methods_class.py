@@ -982,6 +982,7 @@ if __name__ == "__main__":
     x = np.linspace(0,1000,1000)
     designmatrix = inst.DM
     ydata = inst.y
+    
 
 
 
@@ -1008,14 +1009,14 @@ if False: # This code prints out all MSE for various eta values for different lm
         mse_1[i] = inst.MSE(ydata,designmatrix@beta)
 
     print(f"MSE of different lambda values[eta=0.01]: {mse_1}")
-if False:# This code prints out all MSE for various lmbda values for different eta values ranging from [1E-1 - 1E-6]
-        etaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
+if True:# This code prints out all MSE for various lmbda values for different eta values ranging from [1E-1 - 1E-6]
+        etaa = np.array((0.1,0.01,0.001,0.0001,0.00001))
         mse_2 = np.zeros(len(etaa))
         for i, etaaa in enumerate(etaa):
-            beta,mse = inst.PlainGD(eta =etaaa,lmbda=0.1,method="Ridge")
+            beta,mse = inst.PlainGD(eta =etaaa,method="OLS")
             mse_2[i] = inst.MSE(ydata,designmatrix@beta)
-        print(f"MSE of different eta values[lmbda=0.01]: {mse_2}")
-if True: #Heatmap for mse, lmbda and eta
+        print(f"MSE of different eta values: {mse_2}")
+if False: #Heatmap for mse, lmbda and eta
     lmbdaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
     etaa = np.array((0.1,0.01,0.001,0.0001,0.00001,0.000001,0.0000001))
     mse_1 = np.zeros((len(lmbdaa), len(etaa)))

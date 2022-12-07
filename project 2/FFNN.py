@@ -274,7 +274,7 @@ if __name__  == "__main__":
 
         optimal = (eta_vals[5], lmbd_vals[0])
 
-    if False: # Finds the R2 and MSE score for the FFNN regression model by different methods (change it in class name) as presetned in result sect. 3.2.1
+    if True: # Finds the R2 and MSE score for the FFNN regression model by different methods (change it in class name) as presetned in result sect. 3.2.1
         dnn = NeuralNetwork(X_train,Y_train,batch_size=100,eta=0.1,
                     lmbd=0.000001,epochs=10000,n_hidden_neurons= 4, n_hidden_layers=1)
         dnn.train(show=False)
@@ -299,7 +299,7 @@ if __name__  == "__main__":
         # ax.set_title("FFNN model function data vs. true function data")
         # ax.legend(["FFNN model", "True model"])
         # plt.savefig("output_FFNN_vs_truedata.pdf")
-        # plt.show()        # This code will produce the data in the table in section (Comparison between act func)
+        plt.show()        # This code will produce the data in the table in section (Comparison between act func)
 
 
     if False:  # Will produce the graph fit to the data, presented in result section (3.2)
