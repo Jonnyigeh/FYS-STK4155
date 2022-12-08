@@ -5,7 +5,7 @@ from NN_DifferentialEquation_solver import Neural_DE_solver
 import seaborn as sns
 import pandas as pd
 sns.set_theme()
-n = 100
+n = 1000
 x = np.linspace(0, 1, n)
 t = np.linspace(0, 1, n)
 x, t = np.meshgrid(x,t)
@@ -13,6 +13,8 @@ x, t = x.ravel(),t.ravel()
 # layers = [100]*4+[1]
 input_size = 2
 epochs = 1000
+analytical_solution = lambda x,t: np.sin(x*np.pi)*np.exp(-np.pi**2 * t)
+my_model = Neural_DE_solver(layers=layers, input_sz=input_sz, learning_rate=0.001)
 if False: #[UNFINISHED] Trying to solve this problem: Fit the model, later evaluate the function at any t 0 <= x <= 1 and any t > 0:
 
     my_model1 = Neural_DE_solver(layers=layers, input_size=input_size,learning_rate=0.001)
@@ -56,7 +58,7 @@ if False: #[FINISHED] Create plot of PDE using loss function MSE
     plt.xlabel('Number of epochs')
     plt.legend()
     plt.show()
-if True: #[FINISHED] Create plot of loss functions over epochs = 1000, neurons = 100
+if False: #[FINISHED] Create plot of loss functions over epochs = 1000, neurons = 100
     Model1 = Neural_DE_solver(layers=[100]*4+[1],
                                 input_size=input_size,
                                 learning_rate=0.001)
@@ -81,7 +83,7 @@ if True: #[FINISHED] Create plot of loss functions over epochs = 1000, neurons =
     plt.ylabel('Mean Squared Error')
     plt.xlabel('Number of Epochs')
     plt.legend(loc = 'upper right')
-    plt.savefig('figs/MSE_1000epochs_tanh_nr2.pdf')
+    # plt.savefig('figs/MSE_1000epochs_tanh_nr2.pdf')
     plt.show()  
 if False: #[UNFINISHED] Trying to solve this problem: Create heatmap of nodes vs layers to find optimal parameteres for loss/cost function.
                                                                                     
@@ -104,6 +106,15 @@ if False: #[UNFINISHED] Trying to solve this problem: Create heatmap of nodes vs
     plt.xlabel("Layers")
     plt.ylabel("Nodes")
     plt.show()
+
+
+if True: #Testing something
+    grid_span = 40
+    prediciton = my_model.predict(x,t)
+    reshaped_analytical = tf.reshape(analytical_solution(x,t),(grid_span,grid_span))
+    reshaped_prediction = tf.reshape(prediciton,(grid_span,grid_span))
+    relative_error = np.abs((reshaped_analytical-reshaped_prediction)/reshaped_analytical)
+    breakpoint()
 
             
             
