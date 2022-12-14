@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import time
 
 def exact_solution(x,t):
@@ -15,6 +16,17 @@ def exact_solution(x,t):
     return np.sin(np.pi * x) * np.exp(- np.pi **2 * t)
 
 class FWEuler():
+    """Class to solve the 1D heat diffusion PDE
+        using forward euler scheme, with the method of lines.
+
+    We produce an initial guess, which is the initial condition i.e u(x,0) = sin(pi * x)
+    and we run our PDE for T = 1 s, along a "rod" of length L = 1.
+    Endpoints are fixed u(0, t) = u(L, t) = 0.
+
+    The solution is given for each discrete x-point on the rod, which is one row
+    in the u-matrix. E.g the 0th row corresponds to the solution a t=0 (u[0,:]).
+    And this gives an ODE for each x-point, which we use FE to solve each one.
+    """
     def __init__(self):
         self.f0 = lambda x: np.sin(np.pi * x)
 
@@ -41,6 +53,7 @@ class FWEuler():
         return u, t, x
 
 if __name__ == "__main__":
+    sns.set_theme()
     solver = FWEuler()
     ## For dx = 0.01, produces comparison plot FE vs analytical at two timepoints
     if False:
@@ -76,7 +89,7 @@ if __name__ == "__main__":
         plt.xlabel("Position of rod")
         plt.ylabel("Temperature of rod")
         plt.legend()
-        plt.savefig("FE_stabcrit_not_met.pdf")
+        # plt.savefig("FE_stabcrit_not_met.pdf")
         plt.show()
 
     ## For dx = 0.1, produces comparison plot FE vs analytical at two timepoints
@@ -89,7 +102,6 @@ if __name__ == "__main__":
         t2_ind = 4 * t1_ind
         t1 = t[t1_ind]
         t2 = t[t2_ind]
-        breakpoint()
         plt.plot(x, u[0],"r", x, exact_solution(x, 0), "k--")
         plt.plot(x, u[t1_ind],"r", x, exact_solution(x, t1), "k--")
         plt.plot(x, u[t2_ind], "r", x, exact_solution(x, t2), "k--")
