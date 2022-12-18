@@ -8,7 +8,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras import optimizers
 
-np.random.seed(0)
+np.random.seed(20)
 def exact_solution(A):
     """Calculates the eigenvalues of a square-matrix "A"
         by np.linalg.eigvals functionality.
@@ -40,10 +40,10 @@ class TFNeuralNetwork():
     """
     def __init__(self,
             matrix,
-            n_hidden_layers = 2,
-            n_hidden_neurons = 25,
-            max_iterations = 10000,
-            learning_rate = 0.001,
+            n_hidden_layers = 10,
+            n_hidden_neurons = 15,
+            max_iterations = 15,
+            learning_rate = 0.0001,
             act_func = "relu",
             ):
 
@@ -61,11 +61,8 @@ class TFNeuralNetwork():
 
         self.initialize_network()
         self.solving()
-        sns.set_theme()
-        plt.plot(np.arange(0, len(self.loss), 1), self.loss)
-        plt.show()
 
-
+    @tf.function
     def f(self, x, A):
         """When we have converged to solution, f = x(t), i.e dxdt = 0
                 as explained in Yi et al section 1.
@@ -102,7 +99,7 @@ class TFNeuralNetwork():
                 self.model.add(Dense(self.n_hidden_neurons, activation=self.activation_function))
         self.model.add(Dense(1, activation="linear"))                           # The final hidden layer, output layer
 
-
+    @tf.function
     def loss_fn(self, y_true, y_pred):
         """Calculates the Mean squared error
             of two tf.tensorobjects
@@ -114,7 +111,9 @@ class TFNeuralNetwork():
         returns:
             MSE         (tf.tensor): MSE value (scalar value)
         """
-        return tf.reduce_mean(tf.square(y_pred - y_true))
+        loss = tf.reduce_mean(tf.square(y_pred - y_true))
+
+        return loss
 
 
     def solving(self):
@@ -126,12 +125,14 @@ class TFNeuralNetwork():
 
         """
         self.loss = []
-        tol = 1e-8
+        self.eigvals = []
+        tol = 1e-14
         x_trial = tf.reshape(self.model(self.x0), (6,1))
-        self.loss.append(self.loss_fn(x_trial, self.f(x_trial, self.matrix)))   # Adds a duplicate of the initial loss, to start the loop.
+        self.loss.append(self.loss_fn(x_trial, self.f(x_trial, self.matrix)))        # Adds a duplicate of the initial loss, to start the loop.
         optimizer = optimizers.Adam(learning_rate=self.lr)
         iterations = 0                                                               # Counts number of iterations (called epochs, which is slightly misleading)
-        while self.loss[-1] > tol and iterations < self.n_iterations:
+        # while self.loss[-1] > tol and iterations < self.n_iterations:
+        while iterations < self.n_iterations:
             with tf.GradientTape() as tape:
                 if iterations == 0:
                     x_trial = tf.reshape(self.model(self.x0), (6,1))
@@ -141,22 +142,26 @@ class TFNeuralNetwork():
                 self.f_trial = self.f(x_trial, self.matrix)
                 self.eigval_trial = (tf.transpose(x_trial) @ (self.matrix @ x_trial)) / (tf.transpose(x_trial) @ x_trial)
                 self.eigvec_trial = x_trial
-                loss = self.loss_fn(x_trial, self.f_trial)
-            self.loss.append(loss)
+                loss = self.loss_fn(x_trial, self.f_trial) #+ self.loss_fn(self.eigval_trial, 30)
+
+            self.loss.append(float(loss))
+            self.eigvals.append(float(self.eigval_trial.numpy()))
+
             self.gradients = tape.gradient(loss, self.model.trainable_variables)
             optimizer.apply_gradients(zip(
             self.gradients, self.model.trainable_variables
             ))
 
-            if iterations % 100 == 0:
-                print(f"Iteration number {iterations}. Current eigenvalue estimate: {float(self.eigval_trial)}")
+            # if iterations % 100 == 0:
+            print(f"Iteration number {iterations}. Current eigenvalue estimate: {float(self.eigval_trial)}")
             iterations += 1
         self.loss.pop(0)                          # Removes the duplicate of the first loss, added prior to the loop
         self.eigenvalue = self.eigval_trial
         self.eigenvector = self.eigvec_trial
 
 if __name__ == "__main__":
-    ## The square, real, symmetric, 6x6 matrix we use for our calculations
+    sns.set_theme()
+    ## The square, real, symmetric, 6x6 matrix we use for our calculations - to calculate lowest eigenvalue, swap A for -A inside the network. Theorem 4-5 in Yi et al
     matrix = np.array([
     [5, 2, 3, 2, 6, 9],
     [2, 9, 8, 1, 2, 1],
@@ -165,8 +170,21 @@ if __name__ == "__main__":
     [6, 2, 0, 8, 7, 0],
     [9, 1, 4, 3, 0, 9]]
     )
+
     eigvals, eigvecs = exact_solution(matrix)
+    print("Eigenvalues are: ", eigvals, "\n")
     dnn = TFNeuralNetwork(matrix=matrix)
     eigval = dnn.eigval_trial
     eigvec = dnn.eigvec_trial
-    breakpoint()
+    fig, axs = plt.subplots(2, figsize=(8,8))
+    axs[0].plot(np.arange(0, len(dnn.loss), 1), dnn.loss)
+    axs[0].set_title("Loss as function of iteration")
+    axs[0].set_ylabel("Loss estimate", fontsize=10)
+    axs[0].set_xlabel("Number of iterations", fontsize=10)
+    axs[1].plot(np.arange(0, len(dnn.eigvals), 1), dnn.eigvals, np.arange(0, len(dnn.eigvals), 1), eigvals[0]*np.ones(len(dnn.eigvals)), "r--")
+    axs[1].set_title("Convergence rate to eigenvalue estimate")
+    axs[1].set_ylabel("Eigenvalue", fontsize=10)
+    axs[1].set_xlabel("Number of iterations", fontsize=10)
+    fig.tight_layout()
+    # plt.savefig("eigval_NN.pdf")
+    plt.show()
