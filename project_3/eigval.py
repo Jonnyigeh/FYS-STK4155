@@ -126,13 +126,12 @@ class TFNeuralNetwork():
         """
         self.loss = []
         self.eigvals = []
-        tol = 1e-14
+        tol = 1e-16
         x_trial = tf.reshape(self.model(self.x0), (6,1))
         self.loss.append(self.loss_fn(x_trial, self.f(x_trial, self.matrix)))        # Adds a duplicate of the initial loss, to start the loop.
         optimizer = optimizers.Adam(learning_rate=self.lr)
         iterations = 0                                                               # Counts number of iterations (called epochs, which is slightly misleading)
-        # while self.loss[-1] > tol and iterations < self.n_iterations:
-        while iterations < self.n_iterations:
+        while self.loss[-1] > tol and iterations < self.n_iterations:
             with tf.GradientTape() as tape:
                 if iterations == 0:
                     x_trial = tf.reshape(self.model(self.x0), (6,1))
