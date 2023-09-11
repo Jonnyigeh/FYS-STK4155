@@ -1,2 +1,0 @@
-# FYS-STK4155
-Repository for FYS-STK4155
